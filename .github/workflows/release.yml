@@ -14,6 +14,7 @@ jobs:
     if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'vt')
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      GOPROXY: direct
     strategy:
       fail-fast: false
       matrix:
@@ -61,11 +62,28 @@ jobs:
               npm install
             fi
             npm run build
+            cd ..
+          fi
+
+          if [ ! -d frontend/dist ]; then
+            mkdir -p frontend/dist
+          fi
+          if [ ! -f frontend/dist/index.html ]; then
+            cat > frontend/dist/index.html <<'EOF'
+            <!doctype html><html><head><meta charset="utf-8"><title>Release placeholder</title></head><body></body></html>
+            EOF
           fi
 
       - name: Build executable
         shell: bash
         run: |
+          mkdir -p frontend/dist
+          if [ ! -f frontend/dist/index.html ]; then
+            cat > frontend/dist/index.html <<'EOF'
+            <!doctype html><html><head><meta charset="utf-8"><title>Release placeholder</title></head><body></body></html>
+            EOF
+          fi
+
           mkdir -p "dist/${{ matrix.platform }}"
           output="dist/${{ matrix.platform }}/simpleeditor${{ matrix.ext }}"
           tags="production"
