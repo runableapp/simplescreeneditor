@@ -12,6 +12,8 @@ permissions:
 jobs:
   build:
     if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'vt')
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     strategy:
       fail-fast: false
       matrix:
@@ -53,7 +55,11 @@ jobs:
         run: |
           if [ -f frontend/package.json ]; then
             cd frontend
-            npm ci
+            if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+              npm ci
+            else
+              npm install
+            fi
             npm run build
           fi
 
