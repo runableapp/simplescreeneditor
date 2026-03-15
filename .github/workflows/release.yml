@@ -69,9 +69,7 @@ jobs:
             mkdir -p frontend/dist
           fi
           if [ ! -f frontend/dist/index.html ]; then
-            cat > frontend/dist/index.html <<'EOF'
-            <!doctype html><html><head><meta charset="utf-8"><title>Release placeholder</title></head><body></body></html>
-            EOF
+            printf '%s\n' '<!doctype html><html><head><meta charset="utf-8"><title>Release placeholder</title></head><body></body></html>' > frontend/dist/index.html
           fi
 
       - name: Build executable
@@ -79,9 +77,7 @@ jobs:
         run: |
           mkdir -p frontend/dist
           if [ ! -f frontend/dist/index.html ]; then
-            cat > frontend/dist/index.html <<'EOF'
-            <!doctype html><html><head><meta charset="utf-8"><title>Release placeholder</title></head><body></body></html>
-            EOF
+            printf '%s\n' '<!doctype html><html><head><meta charset="utf-8"><title>Release placeholder</title></head><body></body></html>' > frontend/dist/index.html
           fi
 
           mkdir -p "dist/${{ matrix.platform }}"
