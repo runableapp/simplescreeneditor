@@ -31,7 +31,7 @@ jobs:
             goarch: amd64
             ext: ".exe"
             use_cgo: "0"
-          - os: macos-latest
+          - os: macos-13
             platform: mac
             goos: darwin
             goarch: amd64
@@ -86,8 +86,14 @@ jobs:
           if [ "${{ matrix.goos }}" = "linux" ]; then
             tags="production webkit2_41"
           fi
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=${{ matrix.use_cgo }} \
-            go build -trimpath -tags "$tags" -ldflags "-s -w" -o "$output" .
+          if [ "${{ matrix.goos }}" = "darwin" ]; then
+            GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=${{ matrix.use_cgo }} \
+              CGO_LDFLAGS="-framework UniformTypeIdentifiers" \
+              go build -trimpath -tags "$tags" -ldflags "-s -w" -o "$output" .
+          else
+            GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=${{ matrix.use_cgo }} \
+              go build -trimpath -tags "$tags" -ldflags "-s -w" -o "$output" .
+          fi
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
