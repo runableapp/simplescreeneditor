@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SImple Screen Editor - 80x25 고정폭 텍스트 에디터</title>
+  <meta name="description" content="Simple Screen Editor는 한/영 셀 정렬을 안정적으로 처리하는 크로스 플랫폼 80x25 GUI 텍스트 에디터입니다.">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Google Analytics (replace G-XXXXXXXXXX with your Measurement ID) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+</head>
+<body>
+
+<header>
+  <img src="simpel_screen_editor_logo.webp" alt="Simple Screen Editor 로고" class="header-logo">
+  <p class="tagline">80x25 고정 그리드 텍스트 에디터</p>
+  <a href="https://github.com/runableapp/simplescreeneditor" class="btn github-btn" aria-label="깃허브 저장소 보기">
+    <svg class="github-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+      0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52
+      -.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64
+      -.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65
+      0 0 1 8 4.77c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82
+      1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01
+      8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+    </svg>
+    <span>깃허브 저장소 보기</span>
+  </a>
+</header>
+
+<div class="container">
+
+  <section>
+    <h2>💡 Simple Screen Editor란?</h2>
+    <p>
+      <strong>Simple Screen Editor</strong>는 80x25 고정 텍스트 셀 환경에서
+      한글/영문 혼합 입력의 폭 정렬을 안정적으로 처리하는 GUI 스크린 편집기입니다.
+    </p>
+    <p>
+      편집 코어는 Go로 구현되어 있으며 데스크톱 셸은 Wails를 사용합니다.
+      실험용 도구를 넘어 재현 가능한 텍스트 셀 편집 기반을 만드는 데 초점을 둡니다.
+    </p>
+  </section>
+
+  <section>
+    <h2>✨ 주요 기능</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>📐 80x25 고정 그리드</h3>
+        <p>일관된 셀 단위 편집을 위해 화면을 80열 x 25행으로 고정합니다.</p>
+      </div>
+      <div class="feature">
+        <h3>🇰🇷🇺🇸 한/영 폭 정렬</h3>
+        <p>문자 폭 인식을 기반으로 삽입/삭제 시 커서와 셀 배치를 안정적으로 유지합니다.</p>
+      </div>
+      <div class="feature">
+        <h3>📋 클립보드 연동</h3>
+        <p>OS 클립보드 복사/붙여넣기를 지원해 실제 편집 흐름에서 바로 사용할 수 있습니다.</p>
+      </div>
+      <div class="feature">
+        <h3>💾 UTF-8 파일 편집</h3>
+        <p>UTF-8 텍스트 파일 열기/저장을 지원하며 크로스플랫폼 테스트가 가능합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>🖼️ 스크린샷</h2>
+    <img
+      src="simple_screen_editor_screenshot.webp"
+      alt="Simple Screen Editor 실행 화면"
+      class="screenshot-image"
+      loading="lazy"
+    >
+  </section>
+
+  <section>
+    <h2>🚀 빠른 시작</h2>
+    <p>
+      정말 간단합니다. 실행 파일 하나만 있으면 됩니다.
+      터미널에서 아래처럼 입력해 바로 실행하거나, 해당 파일을 더블클릭해서 실행하세요.
+    </p>
+    <pre><code>simpleeditor</code></pre>
+    <p>
+      별도 복잡한 설정 없이, 단일 실행 파일만으로 바로 사용할 수 있습니다.
+    </p>
+
+  </section>
+
+  <section>
+    <h2>📚 문서</h2>
+    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+      <li><a href="../README.md">README.md</a> -- 프로젝트 개요 및 개발 명령</li>
+      <li><a href="../frontend/src/README.md">frontend/src/README.md</a> -- 프런트엔드 구조 참고</li>
+    </ul>
+  </section>
+
+</div>
+
+<section class="container">
+  <h2>📄 License / 라이선스</h2>
+  <pre><code>Simple Screen Editor - A fixed 80x25 text grid editor with robust Korean/English width alignment.
+Copyright (C) 2026  Runable.app
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.
+
+
+
+--- 한국어 ---
+
+Simple Screen Editor - 한글/영문 폭 정렬을 안정적으로 처리하는 80x25 고정 텍스트 그리드 에디터.
+Copyright (C) 2026  Runable.app
+
+이 프로그램은 자유/무료 소프트웨어입니다. 여러분은 자유 소프트웨어 재단에서 공표한
+GNU 일반 공중 사용 허가서 버전 3 또는 (여러분의 선택에 따라) 그 이후 버전의
+조건에 따라 이 프로그램을 재배포하거나 수정할 수 있습니다.
+
+이 프로그램은 유용할 것이라는 기대 아래 배포되지만, 어떠한 보증도 제공하지 않습니다.
+상품성 또는 특정 목적 적합성에 대한 묵시적 보증조차 제공되지 않습니다.
+자세한 내용은 GNU 일반 공중 사용 허가서를 참조하십시오.
+
+GNU 일반 공중 사용 허가서 사본을 이 프로그램과 함께 받았어야 합니다.
+받지 못했다면 &lt;https://www.gnu.org/licenses/&gt;를 참고하십시오.</code></pre>
+</section>
+
+<footer>
+  <img src="runable-logo.webp" alt="서비스 로고" class="footer-logo">
+  <p>
+    Copyright &copy; 2026 <a href="https://runable.app" target="_blank" rel="noopener">Runable.app</a>.
+  </p>
+</footer>
+
+</body>
+</html>

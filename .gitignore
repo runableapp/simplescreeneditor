@@ -1,0 +1,22 @@
+# Build outputs
+dist/
+build/bin/
+
+# Frontend dependencies
+frontend/node_modules/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Test/coverage artifacts
+coverage.out
+*.coverprofile
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

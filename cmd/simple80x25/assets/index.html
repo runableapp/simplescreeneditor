@@ -1,0 +1,1110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple Screen Editor</title>
+    <style>
+      @font-face {
+        font-family: "IyagiGGC";
+        src: url("IyagiGGC.woff") format("woff");
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      :root {
+        --bg: #0b0f14;
+        --fg: #d7dde8;
+        --accent: #64c2ff;
+        --cell-width: 12px;
+        --cell-height: 24px;
+        --row-header-width: 48px;
+        --col-header-height: 48px;
+        --content-font: "IyagiGGC", "Noto Sans Mono CJK KR", "Consolas", monospace;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        padding: 10px;
+      }
+      button {
+        background: #1a2330;
+        color: var(--fg);
+        border: 1px solid #34475d;
+        border-radius: 6px;
+        padding: 6px 10px;
+        transition: background-color 120ms ease, border-color 120ms ease, transform 40ms ease, box-shadow 120ms ease;
+      }
+      button:hover {
+        background: #243244;
+        border-color: #4c6b8c;
+      }
+      button:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(100, 194, 255, 0.35);
+      }
+      button:active {
+        background: #141d2a;
+        transform: translateY(1px);
+        box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.35);
+      }
+      #screen {
+        position: relative;
+        width: calc(80 * var(--cell-width));
+        height: calc(25 * var(--cell-height));
+        border: 1px solid #34475d;
+        background: #0000aa;
+        color: #ffffff;
+        font-family: var(--content-font);
+        overflow: visible;
+        user-select: none;
+      }
+      #editorChrome {
+        position: relative;
+        margin: var(--col-header-height) 0 0 var(--row-header-width);
+        width: calc(80 * var(--cell-width));
+        height: calc(25 * var(--cell-height));
+      }
+      #editorRow {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin: 0 10px 10px;
+      }
+      #sideRail {
+        position: relative;
+        width: 280px;
+        height: calc(var(--col-header-height) + (25 * var(--cell-height)));
+        overflow: visible;
+      }
+      #specialCharPanel {
+        width: 100%;
+        height: calc(var(--col-header-height) + (25 * var(--cell-height)) - 90px);
+        border: 1px solid #34475d;
+        background: #101a2a;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+        display: flex;
+        flex-direction: column;
+      }
+      #specialCharTitle {
+        padding: 6px 10px;
+        border-bottom: 1px solid #34475d;
+        color: #9ac4ff;
+        font-size: 13px;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
+      #specialCharList {
+        flex: 1;
+        overflow-y: auto;
+        padding: 6px;
+      }
+      .special-char-group {
+        margin-bottom: 10px;
+      }
+      .special-char-group-title {
+        font-size: 12px;
+        color: #8fb0d4;
+        margin: 0 0 4px;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
+      .special-char-grid {
+        display: grid;
+        grid-template-columns: repeat(10, minmax(0, 1fr));
+        gap: 4px;
+      }
+      .special-char-btn {
+        border: 1px solid #3a506b;
+        border-radius: 2px;
+        background: #152335;
+        color: #ffffff;
+        font-family: var(--content-font);
+        padding: 2px 0;
+        min-height: 22px;
+        line-height: 1;
+        cursor: pointer;
+        position: relative;
+        z-index: 0;
+        transform-origin: center;
+        transition: transform 100ms ease, box-shadow 100ms ease, border-color 100ms ease;
+      }
+      .special-char-btn:hover {
+        background: #1d2f47;
+        border-color: #5c86b0;
+        transform: scale(1.65);
+        z-index: 6;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+      }
+      #lineTool {
+        border-top: 1px solid #34475d;
+        padding: 6px;
+        background: #0f1828;
+      }
+      #lineToolTitle {
+        font-size: 12px;
+        color: #9ac4ff;
+        margin-bottom: 6px;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
+      #lineTypeSelect {
+        width: 100%;
+        background: #ffffff;
+        color: #111111;
+        border: 1px solid #3a506b;
+        border-radius: 4px;
+        padding: 4px 6px;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
+      #lineTypeSelect option {
+        background: #ffffff;
+        color: #111111;
+      }
+      #lineToolHint {
+        margin-top: 4px;
+        font-size: 12px;
+        color: #8fb0d4;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
+      #colorTool {
+        border-top: 1px solid #34475d;
+        padding: 6px;
+        background: #0f1828;
+      }
+      #colorToolTitle {
+        font-size: 12px;
+        color: #9ac4ff;
+        margin-bottom: 6px;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
+      #ansiApplyModeGroup {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 6px;
+      }
+      .ansi-mode-option {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: #d5e5fb;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+        font-size: 12px;
+      }
+      .ansi-mode-option input[type="radio"] {
+        margin: 0;
+      }
+      .ansi-color-menu {
+        position: relative;
+      }
+      #ansiColorToggle {
+        width: 100%;
+        text-align: left;
+      }
+      #ansiColorOptions {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: calc(100% + 4px);
+        max-height: 220px;
+        overflow-y: auto;
+        border: 1px solid #3a506b;
+        border-radius: 4px;
+        background: #ffffff;
+        z-index: 20;
+      }
+      .ansi-color-option {
+        width: 100%;
+        border: 0;
+        border-bottom: 1px solid #e5e7eb;
+        border-radius: 0;
+        background: #ffffff;
+        color: #111111;
+        padding: 4px 6px;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ansi-color-option:last-child {
+        border-bottom: 0;
+      }
+      .ansi-color-option:hover {
+        background: #f2f6fb;
+      }
+      .ansi-swatch {
+        width: 12px;
+        height: 12px;
+        border: 1px solid #3a506b;
+        flex: 0 0 12px;
+      }
+      #clearColorBtn {
+        margin-top: 6px;
+        width: 100%;
+      }
+      #panelLogo {
+        position: absolute;
+        left: 50%;
+        bottom: -52px;
+        transform: translateX(-50%);
+        width: 132px;
+        height: auto;
+        opacity: 0.92;
+        user-select: none;
+        transform-origin: center bottom;
+      }
+      #panelLogo:hover {
+        animation: logo-shake 420ms ease-in-out;
+      }
+      @keyframes logo-shake {
+        0% {
+          transform: translateX(-50%) rotate(0deg);
+        }
+        20% {
+          transform: translateX(-50%) rotate(-3deg);
+        }
+        40% {
+          transform: translateX(-50%) rotate(3deg);
+        }
+        60% {
+          transform: translateX(-50%) rotate(-2deg);
+        }
+        80% {
+          transform: translateX(-50%) rotate(2deg);
+        }
+        100% {
+          transform: translateX(-50%) rotate(0deg);
+        }
+      }
+      .header {
+        position: absolute;
+        color: #8ba2b8;
+        line-height: var(--cell-height);
+        height: var(--cell-height);
+        white-space: pre;
+        pointer-events: none;
+      }
+      .header.active-header {
+        background: #ffffff;
+        color: #000000;
+      }
+      .col-header {
+        top: calc(-1 * var(--col-header-height));
+        width: var(--cell-width);
+        text-align: center;
+      }
+      .row-header {
+        left: calc(-1 * var(--row-header-width));
+        width: var(--row-header-width);
+        text-align: right;
+        padding-right: 6px;
+        box-sizing: border-box;
+      }
+      #keySink {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .token {
+        position: absolute;
+        white-space: pre;
+        line-height: var(--cell-height);
+        height: var(--cell-height);
+      }
+      .eol-marker {
+        position: absolute;
+        line-height: var(--cell-height);
+        height: var(--cell-height);
+        color: #8fb0ff;
+        opacity: 0.8;
+        pointer-events: none;
+      }
+      .selection-cell {
+        position: absolute;
+        width: var(--cell-width);
+        height: var(--cell-height);
+        background: rgba(255, 255, 255, 0.28);
+        pointer-events: none;
+      }
+      #cursor {
+        position: absolute;
+        width: var(--cell-width);
+        height: var(--cell-height);
+        background: #ffff00;
+        box-sizing: border-box;
+        pointer-events: none;
+        opacity: 0.75;
+        animation: cursor-blink 1s steps(1, end) infinite;
+      }
+      @keyframes cursor-blink {
+        0%,
+        49% {
+          opacity: 0.75;
+        }
+        50%,
+        100% {
+          opacity: 0;
+        }
+      }
+      #hint {
+        margin: 0 10px 12px calc(10px + var(--row-header-width));
+        color: #8ba2b8;
+        font-size: 13px;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
+      #footer {
+        margin: 4px 10px 12px;
+        color: #8ba2b8;
+        font-size: 15px;
+        text-align: center;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
+      #footer a {
+        color: #9ac4ff;
+        text-decoration: none;
+      }
+      #footer a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <button id="clearBtn">Clear</button>
+      <button id="copyBtn">Copy Buffer</button>
+      <button id="pasteBtn">Paste</button>
+    </div>
+    <div id="editorRow">
+      <div id="editorChrome">
+        <div id="screen" tabindex="0">
+          <textarea id="keySink" aria-hidden="true" tabindex="-1"></textarea>
+          <div id="cursor"></div>
+        </div>
+      </div>
+      <div id="sideRail">
+        <aside id="specialCharPanel">
+          <div id="specialCharTitle">Special Char</div>
+          <div id="specialCharList"></div>
+          <div id="lineTool">
+            <div id="lineToolTitle">Line Drawing Tool</div>
+            <select id="lineTypeSelect">
+              <option value="none">none (no drawing)</option>
+              <option value="single">single ─ │ ┌ ┼</option>
+              <option value="double">double ═ ║ ╔ ╬</option>
+              <option value="thick">thick ━ ┃ ┏ ╋</option>
+            </select>
+            <div id="lineToolHint">Ctrl + Arrow to draw</div>
+          </div>
+          <div id="colorTool">
+            <div id="colorToolTitle">ANSI Color</div>
+            <div id="ansiApplyModeGroup">
+              <label class="ansi-mode-option">
+                <input type="radio" name="ansiApplyMode" value="fg" checked />
+                <span>foreground</span>
+              </label>
+              <label class="ansi-mode-option">
+                <input type="radio" name="ansiApplyMode" value="bg" />
+                <span>background</span>
+              </label>
+            </div>
+            <div class="ansi-color-menu" id="ansiColorMenu">
+              <button id="ansiColorToggle" type="button">(no color)</button>
+              <div id="ansiColorOptions" hidden></div>
+            </div>
+            <input type="hidden" id="ansiColorSelect" value="" />
+            <button id="clearColorBtn" type="button">Clear Color</button>
+          </div>
+        </aside>
+        <img id="panelLogo" src="simpel_screen_editor_logo.webp" alt="Simple Screen Editor logo" />
+      </div>
+    </div>
+    <div id="hint">Ctrl+C: copy buffer, Ctrl+V: paste, arrows/backspace/delete/enter supported.</div>
+    <div id="footer">&copy; 2026 <a id="runableLink" href="https://runable.app" target="_blank" rel="noopener noreferrer">Runable.app</a>.</div>
+    <script>
+      const state = { rows: 25, cols: 80, lines: [], cursor: { row: 0, col: 0 } };
+      const editorChrome = document.getElementById("editorChrome");
+      const screen = document.getElementById("screen");
+      const keySink = document.getElementById("keySink");
+      const cursor = document.getElementById("cursor");
+      const specialCharList = document.getElementById("specialCharList");
+      const lineTypeSelect = document.getElementById("lineTypeSelect");
+      const ansiApplyModeInputs = Array.from(document.querySelectorAll('input[name="ansiApplyMode"]'));
+      const ansiColorSelect = document.getElementById("ansiColorSelect");
+      const runableLink = document.getElementById("runableLink");
+      const ansiColorMenu = document.getElementById("ansiColorMenu");
+      const ansiColorToggle = document.getElementById("ansiColorToggle");
+      const ansiColorOptions = document.getElementById("ansiColorOptions");
+      const clearColorBtn = document.getElementById("clearColorBtn");
+      let selectionAnchor = null;
+      let selectionCursor = null;
+      let isMouseSelecting = false;
+      let mouseSelectionHadDrag = false;
+      let mouseSelectionShiftMode = false;
+      const ansiColorMap = {
+        black: "#000000",
+        red: "#aa0000",
+        green: "#00aa00",
+        yellow: "#aa5500",
+        blue: "#0000aa",
+        magenta: "#aa00aa",
+        cyan: "#00aaaa",
+        white: "#aaaaaa",
+        brightBlack: "#555555",
+        brightRed: "#ff5555",
+        brightGreen: "#55ff55",
+        brightYellow: "#ffff55",
+        brightBlue: "#5555ff",
+        brightMagenta: "#ff55ff",
+        brightCyan: "#55ffff",
+        brightWhite: "#ffffff",
+      };
+      const ansiColorChoices = [
+        ["", "(no color)"],
+        ["black", "black"],
+        ["red", "red"],
+        ["green", "green"],
+        ["yellow", "yellow"],
+        ["blue", "blue"],
+        ["magenta", "magenta"],
+        ["cyan", "cyan"],
+        ["white", "white"],
+        ["brightBlack", "bright black"],
+        ["brightRed", "bright red"],
+        ["brightGreen", "bright green"],
+        ["brightYellow", "bright yellow"],
+        ["brightBlue", "bright blue"],
+        ["brightMagenta", "bright magenta"],
+        ["brightCyan", "bright cyan"],
+        ["brightWhite", "bright white"],
+      ];
+      const specialCharGroups = [
+        {
+          name: "KS X 1001 특수문자 리스트",
+          chars: "、。·‥…¨〃―∥＼∼‘’“”〔〕〈〉《》「」『』【】±×÷≠≤≥∞∴°′″℃Å￠￡￥♂♀∠⊥⌒∂∇≡≒§※☆★○●◎◇◆□■△▲▽▼→←↑↓↔〓≪≫√∽∝∵∫∬∈∋⊆⊇⊂⊃∪∩∧∨￢⇒⇔∀∃∮∑∏¤℉‰",
+        },
+        {
+          name: "KS X 1001 도형문자 리스트",
+          chars: "─│┌┐┘└├┬┤┴┼━┃┏┓┛┗┣┳┫┻╋┠┯┨┷┿┝┰┥┸╂┒┑┚┙┖┕┎┍┞┟┡┢┦┧┩┪┭┮┱┲┵┶┹┺┽┾╀╁╃╄╅╆╇╈╉╊",
+        },
+        {
+          name: "이야기 특수문자 리스트 (사용자영역 사용)",
+          ranges: [[0xf100, 0xf19f]],
+        },
+        {
+          name: "이야기 특수문자 리스트 (ss01 스타일 적용)",
+          chars: "☺☻♥◆♣♠•◘○◙♂♀♪♬☼▶◀↕‼¶§▬↨↑↓→←∟↔▲▼▓░▒│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αβγπ∑σμτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈˚∙⏎√ⁿ²▪",
+        },
+        {
+          name: "변형 특수문자 리스트 (ss02 스타일 적용)",
+          chars: "0123456789▒▤▥▨▧▦▩",
+        },
+        {
+          name: "확장 특수문자 리스트",
+          chars: "₩⁵⁶⁷⁸⁹₀₅₆₇₈₉ⅪⅫⅺⅻ↰↱↲↳↴↵⇐⇑⇓⇕⇦⇧⇨⇩⇳➔➘➙➚➛➜➝➞➟➠➡⬀⬁⬂⬃⬄⬅⬆⬇⬈⬉⬊⬋⬌⬍⬎⬏⬐⬑⏎┄┅┆┇┈┉┊┋╌╍╎╏╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿▁▂▃▅▆▇▉▊▋▍▎▏▔▕▖▗▘▙▚▛▜▝▞▟▢▪▫▬▭▮▯☝☟✉✓✔✕✖✗✘✙✚✛✜✝✞✟✠❍❎❏❐❑❒➕➖➗",
+        },
+        {
+          name: "반각화 특수문자 리스트 (hwid 스타일 적용)",
+          chars: "⌂☺☻♥♦♣♠•◘○◙♂♀♪♬☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■",
+        },
+      ];
+
+      function cellMetrics() {
+        const style = getComputedStyle(document.documentElement);
+        return {
+          w: parseFloat(style.getPropertyValue("--cell-width")),
+          h: parseFloat(style.getPropertyValue("--cell-height")),
+        };
+      }
+
+      function draw(next) {
+        state.rows = next.rows;
+        state.cols = next.cols;
+        state.lines = next.lines;
+        state.cursor = next.cursor;
+
+        const oldTokens = [...screen.querySelectorAll(".token, .eol-marker, .selection-cell")];
+        oldTokens.forEach((n) => n.remove());
+        const oldHeaders = [...editorChrome.querySelectorAll(".header")];
+        oldHeaders.forEach((n) => n.remove());
+        const { w, h } = cellMetrics();
+        const rootStyle = getComputedStyle(document.documentElement);
+        const rowHeaderWidth = parseFloat(rootStyle.getPropertyValue("--row-header-width")) || 48;
+        const colHeaderHeight = parseFloat(rootStyle.getPropertyValue("--col-header-height")) || h;
+
+        for (let col = 0; col < state.cols; col += 1) {
+          const value = col + 1;
+          const tensHeader = document.createElement("div");
+          tensHeader.className = "header col-header";
+          tensHeader.textContent = value % 10 === 0 ? String(Math.floor(value / 10) % 10) : " ";
+          if (col === state.cursor.col) {
+            tensHeader.classList.add("active-header");
+          }
+          tensHeader.style.left = `${col * w}px`;
+          tensHeader.style.top = `${-colHeaderHeight}px`;
+          editorChrome.appendChild(tensHeader);
+
+          const onesHeader = document.createElement("div");
+          onesHeader.className = "header col-header";
+          onesHeader.textContent = String(value % 10);
+          if (col === state.cursor.col) {
+            onesHeader.classList.add("active-header");
+          }
+          onesHeader.style.left = `${col * w}px`;
+          onesHeader.style.top = `${h - colHeaderHeight}px`;
+          editorChrome.appendChild(onesHeader);
+        }
+        for (let row = 0; row < state.rows; row += 1) {
+          const header = document.createElement("div");
+          header.className = "header row-header";
+          header.textContent = String(row + 1).padStart(2, " ");
+          if (row === state.cursor.row) {
+            header.classList.add("active-header");
+          }
+          header.style.top = `${row * h}px`;
+          editorChrome.appendChild(header);
+        }
+
+        const selection = currentSelectionRect();
+        if (selection) {
+          for (let row = selection.startRow; row <= selection.endRow; row += 1) {
+            for (let col = selection.startCol; col <= selection.endCol; col += 1) {
+              const marker = document.createElement("div");
+              marker.className = "selection-cell";
+              marker.style.left = `${col * w}px`;
+              marker.style.top = `${row * h}px`;
+              screen.appendChild(marker);
+            }
+          }
+        }
+
+        state.lines.forEach((line, row) => {
+          let lineEndCol = 0;
+          line.forEach((token) => {
+            const el = document.createElement("div");
+            el.className = "token";
+            el.textContent = token.text;
+            el.style.left = `${token.col * w}px`;
+            el.style.top = `${row * h}px`;
+            el.style.width = `${token.width * w}px`;
+            if (token.color && ansiColorMap[token.color]) {
+              el.style.color = ansiColorMap[token.color];
+            }
+            if (token.bgColor && ansiColorMap[token.bgColor]) {
+              el.style.backgroundColor = ansiColorMap[token.bgColor];
+            }
+            screen.appendChild(el);
+            lineEndCol = Math.max(lineEndCol, token.col + token.width);
+          });
+
+          const eol = document.createElement("div");
+          eol.className = "eol-marker";
+          eol.textContent = "↵";
+          eol.style.left = `${lineEndCol * w}px`;
+          eol.style.top = `${row * h}px`;
+          screen.appendChild(eol);
+        });
+        cursor.style.left = `${state.cursor.col * w}px`;
+        cursor.style.top = `${state.cursor.row * h}px`;
+      }
+
+      async function call(name, ...args) {
+        if (!window.go || !window.go.app || !window.go.app.Bridge) {
+          return null;
+        }
+        return window.go.app.Bridge[name](...args);
+      }
+
+      async function refresh() {
+        const snap = await call("Snapshot");
+        if (snap) draw(snap);
+      }
+
+      function focusInputSink() {
+        keySink.focus();
+      }
+
+      async function insertTextInput(text) {
+        if (!text) return;
+        const next = await call("InsertText", text);
+        if (next) draw(next);
+      }
+
+      function selectedLineStyle() {
+        return lineTypeSelect && lineTypeSelect.value ? lineTypeSelect.value : "none";
+      }
+
+      function hasSelection() {
+        return !!(selectionAnchor && selectionCursor);
+      }
+
+      function currentSelectionRect() {
+        if (!hasSelection()) return null;
+        return {
+          startRow: Math.min(selectionAnchor.row, selectionCursor.row),
+          startCol: Math.min(selectionAnchor.col, selectionCursor.col),
+          endRow: Math.max(selectionAnchor.row, selectionCursor.row),
+          endCol: Math.max(selectionAnchor.col, selectionCursor.col),
+        };
+      }
+
+      function isFullScreenSelection(selection) {
+        return !!selection &&
+          selection.startRow === 0 &&
+          selection.startCol === 0 &&
+          selection.endRow === state.rows - 1 &&
+          selection.endCol === state.cols - 1;
+      }
+
+      async function copyCurrentSelectionOrBuffer() {
+        const selection = currentSelectionRect();
+        if (!selection) {
+          await call("CopyBuffer");
+          return;
+        }
+        await call("CopyRegion", selection.startRow, selection.startCol, selection.endRow, selection.endCol);
+      }
+
+      function clearSelection() {
+        selectionAnchor = null;
+        selectionCursor = null;
+      }
+
+      function selectAll() {
+        selectionAnchor = { row: 0, col: 0 };
+        selectionCursor = { row: state.rows - 1, col: state.cols - 1 };
+        draw(state);
+      }
+
+      function clampCell(row, col) {
+        return {
+          row: Math.max(0, Math.min(state.rows - 1, row)),
+          col: Math.max(0, Math.min(state.cols - 1, col)),
+        };
+      }
+
+      function mouseEventToCell(ev) {
+        const rect = screen.getBoundingClientRect();
+        const { w, h } = cellMetrics();
+        const col = Math.floor((ev.clientX - rect.left) / w);
+        const row = Math.floor((ev.clientY - rect.top) / h);
+        return clampCell(row, col);
+      }
+
+      function sameCell(a, b) {
+        return !!a && !!b && a.row === b.row && a.col === b.col;
+      }
+
+      async function setCursorFromCell(cell) {
+        const next = await call("SetCursor", cell.row, cell.col);
+        if (next) draw(next);
+      }
+
+      async function applyActiveANSIColor() {
+        const color = ansiColorSelect ? ansiColorSelect.value : "";
+        const modeInput = document.querySelector('input[name="ansiApplyMode"]:checked');
+        const mode = modeInput ? modeInput.value : "fg";
+        if (mode === "bg") {
+          await call("SetActiveANSIBGColor", color);
+        } else {
+          await call("SetActiveANSIFGColor", color);
+        }
+        const selection = currentSelectionRect();
+        if (selection) {
+          const next =
+            mode === "bg"
+              ? await call("SetRegionBGColor", selection.startRow, selection.startCol, selection.endRow, selection.endCol, color)
+              : await call("SetRegionColor", selection.startRow, selection.startCol, selection.endRow, selection.endCol, color);
+          if (next) draw(next);
+        }
+      }
+
+      function updateANSIColorToggle() {
+        const selected = ansiColorChoices.find(([value]) => value === ansiColorSelect.value) || ansiColorChoices[0];
+        const value = selected[0];
+        const label = selected[1];
+        const swatch = value && ansiColorMap[value] ? `<span class="ansi-swatch" style="background:${ansiColorMap[value]}"></span>` : `<span class="ansi-swatch" style="background:#ffffff"></span>`;
+        ansiColorToggle.innerHTML = `${swatch}<span>${label}</span>`;
+        ansiColorToggle.style.display = "flex";
+        ansiColorToggle.style.alignItems = "center";
+        ansiColorToggle.style.gap = "6px";
+      }
+
+      function closeANSIColorMenu() {
+        ansiColorOptions.hidden = true;
+      }
+
+      function initANSIColorMenu() {
+        ansiColorOptions.innerHTML = "";
+        ansiColorChoices.forEach(([value, label]) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "ansi-color-option";
+          const swatchColor = value && ansiColorMap[value] ? ansiColorMap[value] : "#ffffff";
+          btn.innerHTML = `<span class="ansi-swatch" style="background:${swatchColor}"></span><span>${label}</span>`;
+          btn.addEventListener("click", async () => {
+            ansiColorSelect.value = value;
+            updateANSIColorToggle();
+            closeANSIColorMenu();
+            await applyActiveANSIColor();
+          });
+          ansiColorOptions.appendChild(btn);
+        });
+        ansiColorToggle.addEventListener("click", () => {
+          ansiColorOptions.hidden = !ansiColorOptions.hidden;
+        });
+        document.addEventListener("mousedown", (ev) => {
+          if (!ansiColorMenu.contains(ev.target)) {
+            closeANSIColorMenu();
+          }
+        });
+        updateANSIColorToggle();
+      }
+
+      function buildSpecialChars() {
+        const toChars = (group) => {
+          const chars = [];
+          if (group.chars) {
+            for (const ch of group.chars) {
+              if (!/\s/u.test(ch)) {
+                chars.push(ch);
+              }
+            }
+          }
+          if (group.ranges) {
+            for (const [start, end] of group.ranges) {
+              for (let cp = start; cp <= end; cp += 1) {
+                const ch = String.fromCodePoint(cp);
+                if (!/\s/u.test(ch)) {
+                  chars.push(ch);
+                }
+              }
+            }
+          }
+          return [...new Set(chars)];
+        };
+
+        specialCharList.innerHTML = "";
+        specialCharGroups.forEach((group) => {
+          const chars = toChars(group);
+          if (chars.length === 0) return;
+
+          const section = document.createElement("section");
+          section.className = "special-char-group";
+
+          const title = document.createElement("h4");
+          title.className = "special-char-group-title";
+          title.textContent = group.name;
+          section.appendChild(title);
+
+          const grid = document.createElement("div");
+          grid.className = "special-char-grid";
+
+          chars.forEach((ch) => {
+            const btn = document.createElement("button");
+            btn.className = "special-char-btn";
+            btn.type = "button";
+            btn.textContent = ch;
+            btn.title = `U+${ch.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}`;
+            btn.addEventListener("click", async () => {
+              const selection = currentSelectionRect();
+              if (selection) {
+                const next = await call("FillRegion", selection.startRow, selection.startCol, selection.endRow, selection.endCol, ch);
+                clearSelection();
+                if (next) draw(next);
+              } else {
+                await insertTextInput(ch);
+              }
+              focusInputSink();
+            });
+            grid.appendChild(btn);
+          });
+
+          section.appendChild(grid);
+          specialCharList.appendChild(section);
+        });
+      }
+
+      keySink.addEventListener("keydown", async (ev) => {
+        if (ev.ctrlKey && ev.key.toLowerCase() === "a") {
+          ev.preventDefault();
+          selectAll();
+          return;
+        }
+        if (ev.ctrlKey && ev.key.toLowerCase() === "c") {
+          ev.preventDefault();
+          await copyCurrentSelectionOrBuffer();
+          return;
+        }
+        if (ev.ctrlKey && ev.key.toLowerCase() === "v") {
+          ev.preventDefault();
+          clearSelection();
+          const next = await call("PasteFromClipboard");
+          if (next) draw(next);
+          return;
+        }
+        if (ev.ctrlKey && ev.key === "ArrowLeft") {
+          ev.preventDefault();
+          clearSelection();
+          if (selectedLineStyle() === "none") {
+            draw(await call("MoveLeft"));
+          } else {
+            draw(await call("DrawLineLeft", selectedLineStyle()));
+          }
+          return;
+        }
+        if (ev.ctrlKey && ev.key === "ArrowRight") {
+          ev.preventDefault();
+          clearSelection();
+          if (selectedLineStyle() === "none") {
+            draw(await call("MoveRight"));
+          } else {
+            draw(await call("DrawLineRight", selectedLineStyle()));
+          }
+          return;
+        }
+        if (ev.ctrlKey && ev.key === "ArrowUp") {
+          ev.preventDefault();
+          clearSelection();
+          if (selectedLineStyle() === "none") {
+            draw(await call("MoveUp"));
+          } else {
+            draw(await call("DrawLineUp", selectedLineStyle()));
+          }
+          return;
+        }
+        if (ev.ctrlKey && ev.key === "ArrowDown") {
+          ev.preventDefault();
+          clearSelection();
+          if (selectedLineStyle() === "none") {
+            draw(await call("MoveDown"));
+          } else {
+            draw(await call("DrawLineDown", selectedLineStyle()));
+          }
+          return;
+        }
+        if (ev.shiftKey && ev.key === "ArrowLeft") {
+          ev.preventDefault();
+          if (!selectionAnchor) {
+            selectionAnchor = { row: state.cursor.row, col: state.cursor.col };
+          }
+          const next = await call("MoveLeft");
+          if (next) {
+            selectionCursor = { row: next.cursor.row, col: next.cursor.col };
+            draw(next);
+          }
+          return;
+        }
+        if (ev.shiftKey && ev.key === "ArrowRight") {
+          ev.preventDefault();
+          if (!selectionAnchor) {
+            selectionAnchor = { row: state.cursor.row, col: state.cursor.col };
+          }
+          const next = await call("MoveRight");
+          if (next) {
+            selectionCursor = { row: next.cursor.row, col: next.cursor.col };
+            draw(next);
+          }
+          return;
+        }
+        if (ev.shiftKey && ev.key === "ArrowUp") {
+          ev.preventDefault();
+          if (!selectionAnchor) {
+            selectionAnchor = { row: state.cursor.row, col: state.cursor.col };
+          }
+          const next = await call("MoveUp");
+          if (next) {
+            selectionCursor = { row: next.cursor.row, col: next.cursor.col };
+            draw(next);
+          }
+          return;
+        }
+        if (ev.shiftKey && ev.key === "ArrowDown") {
+          ev.preventDefault();
+          if (!selectionAnchor) {
+            selectionAnchor = { row: state.cursor.row, col: state.cursor.col };
+          }
+          const next = await call("MoveDown");
+          if (next) {
+            selectionCursor = { row: next.cursor.row, col: next.cursor.col };
+            draw(next);
+          }
+          return;
+        }
+        if (ev.key === "ArrowLeft") {
+          ev.preventDefault();
+          clearSelection();
+          draw(await call("MoveLeft"));
+          return;
+        }
+        if (ev.key === "ArrowRight") {
+          ev.preventDefault();
+          clearSelection();
+          draw(await call("MoveRight"));
+          return;
+        }
+        if (ev.key === "ArrowUp") {
+          ev.preventDefault();
+          clearSelection();
+          draw(await call("MoveUp"));
+          return;
+        }
+        if (ev.key === "ArrowDown") {
+          ev.preventDefault();
+          clearSelection();
+          draw(await call("MoveDown"));
+          return;
+        }
+        if (ev.ctrlKey && ev.key === "Home") {
+          ev.preventDefault();
+          draw(await call("MoveTop"));
+          return;
+        }
+        if (ev.ctrlKey && ev.key === "End") {
+          ev.preventDefault();
+          draw(await call("MoveBottom"));
+          return;
+        }
+        if (ev.key === "Home") {
+          ev.preventDefault();
+          clearSelection();
+          draw(await call("MoveHome"));
+          return;
+        }
+        if (ev.key === "End") {
+          ev.preventDefault();
+          clearSelection();
+          draw(await call("MoveEnd"));
+          return;
+        }
+        if (ev.key === "Backspace") {
+          ev.preventDefault();
+          const selection = currentSelectionRect();
+          if (selection) {
+            const next = isFullScreenSelection(selection)
+              ? await call("ClearScreen")
+              : await call("ClearRegion", selection.startRow, selection.startCol, selection.endRow, selection.endCol);
+            clearSelection();
+            if (next) draw(next);
+            return;
+          }
+          clearSelection();
+          draw(await call("Backspace"));
+          return;
+        }
+        if (ev.key === "Delete") {
+          ev.preventDefault();
+          const selection = currentSelectionRect();
+          if (selection) {
+            const next = isFullScreenSelection(selection)
+              ? await call("ClearScreen")
+              : await call("ClearRegion", selection.startRow, selection.startCol, selection.endRow, selection.endCol);
+            clearSelection();
+            if (next) draw(next);
+            return;
+          }
+          clearSelection();
+          draw(await call("Delete"));
+          return;
+        }
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          clearSelection();
+          draw(await call("Enter"));
+          return;
+        }
+      });
+
+      keySink.addEventListener("input", async (ev) => {
+        if (ev.isComposing) return;
+        clearSelection();
+        const value = keySink.value;
+        keySink.value = "";
+        await insertTextInput(value);
+      });
+
+      keySink.addEventListener("compositionend", async (ev) => {
+        if (ev.data) {
+          clearSelection();
+          await insertTextInput(ev.data);
+        }
+        keySink.value = "";
+      });
+
+      screen.addEventListener("mousedown", async (ev) => {
+        ev.preventDefault();
+        const cell = mouseEventToCell(ev);
+        mouseSelectionShiftMode = ev.shiftKey;
+        mouseSelectionHadDrag = false;
+        isMouseSelecting = true;
+
+        if (ev.shiftKey) {
+          if (!selectionAnchor) {
+            selectionAnchor = { row: state.cursor.row, col: state.cursor.col };
+          }
+          selectionCursor = cell;
+        } else {
+          selectionAnchor = cell;
+          selectionCursor = cell;
+        }
+        await setCursorFromCell(cell);
+        setTimeout(focusInputSink, 0);
+      });
+
+      screen.addEventListener("mousemove", async (ev) => {
+        if (!isMouseSelecting) return;
+        ev.preventDefault();
+        const cell = mouseEventToCell(ev);
+        if (!sameCell(selectionCursor, cell)) {
+          mouseSelectionHadDrag = true;
+        }
+        selectionCursor = cell;
+        await setCursorFromCell(cell);
+      });
+
+      window.addEventListener("mouseup", () => {
+        if (!isMouseSelecting) return;
+        isMouseSelecting = false;
+        if (!mouseSelectionHadDrag && !mouseSelectionShiftMode) {
+          clearSelection();
+          draw(state);
+        }
+      });
+
+      async function clearScreen() {
+        clearSelection();
+        const next = await call("ClearScreen");
+        if (next) draw(next);
+      }
+
+      document.getElementById("clearBtn").addEventListener("click", clearScreen);
+      document.getElementById("copyBtn").addEventListener("click", copyCurrentSelectionOrBuffer);
+      document.getElementById("pasteBtn").addEventListener("click", async () => draw(await call("PasteFromClipboard")));
+      runableLink.addEventListener("click", async (ev) => {
+        ev.preventDefault();
+        await call("OpenExternalURL", "https://runable.app");
+      });
+      clearColorBtn.addEventListener("click", async () => {
+        ansiColorSelect.value = "";
+        updateANSIColorToggle();
+        const next = await call("ClearANSIColors");
+        if (next) draw(next);
+      });
+      ansiApplyModeInputs.forEach((input) => input.addEventListener("change", applyActiveANSIColor));
+
+      window.addEventListener("load", async () => {
+        initANSIColorMenu();
+        await applyActiveANSIColor();
+        buildSpecialChars();
+        await refresh();
+        focusInputSink();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,102 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "!vt*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'vt')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            goos: linux
+            goarch: amd64
+            ext: ""
+            use_cgo: "1"
+          - os: windows-latest
+            platform: windows
+            goos: windows
+            goarch: amd64
+            ext: ".exe"
+            use_cgo: "0"
+          - os: macos-latest
+            platform: mac
+            goos: darwin
+            goarch: amd64
+            ext: ""
+            use_cgo: "0"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install Linux GUI build dependencies
+        if: matrix.goos == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libgtk-3-dev libwebkit2gtk-4.1-dev
+
+      - name: Build frontend assets
+        shell: bash
+        run: |
+          if [ -f frontend/package.json ]; then
+            cd frontend
+            npm ci
+            npm run build
+          fi
+
+      - name: Build executable
+        shell: bash
+        run: |
+          mkdir -p "dist/${{ matrix.platform }}"
+          output="dist/${{ matrix.platform }}/simpleeditor${{ matrix.ext }}"
+          tags="production"
+          if [ "${{ matrix.goos }}" = "linux" ]; then
+            tags="production webkit2_41"
+          fi
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=${{ matrix.use_cgo }} \
+            go build -trimpath -tags "$tags" -ldflags "-s -w" -o "$output" .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}
+          path: dist/${{ matrix.platform }}
+          if-no-files-found: error
+
+  publish-release:
+    if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'vt')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Create platform zip archives
+        run: |
+          for platform in linux windows mac; do
+            (cd release-artifacts && zip -r "../simpleeditor-${platform}.zip" "${platform}")
+          done
+
+      - name: Publish GitHub release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            simpleeditor-linux.zip
+            simpleeditor-windows.zip
+            simpleeditor-mac.zip
+          generate_release_notes: true

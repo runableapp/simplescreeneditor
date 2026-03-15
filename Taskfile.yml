@@ -1,0 +1,117 @@
+version: "3"
+
+vars:
+  APP_NAME: simple-editor
+  BUILD_DIR: dist
+  GO_FLAGS: -trimpath
+  LD_FLAGS: -s -w
+
+tasks:
+  strict-cgo:
+    desc: Fail fast unless required CGO compilers are installed
+    cmds:
+      - |
+        set -eu
+        missing=0
+        for tool in gcc; do
+          if ! command -v "$tool" >/dev/null 2>&1; then
+            echo "missing required compiler: $tool"
+            missing=1
+          fi
+        done
+        if [ "$missing" -ne 0 ]; then
+          echo "Install required compilers and re-run: task strict-cgo"
+          echo "Ubuntu example: sudo apt-get install -y build-essential"
+          exit 1
+        fi
+        echo "strict-cgo check passed"
+
+  setup:
+    desc: Install dependencies and prep frontend
+    cmds:
+      - go mod tidy
+      - |
+        if [ -f frontend/package.json ]; then
+          cd frontend && npm install
+        else
+          echo "frontend/package.json not found; skip npm install"
+        fi
+
+  run:
+    desc: Run desktop app in development mode
+    cmds:
+      - wails dev -s -tags webkit2_41
+
+  test:
+    desc: Run Go test suite
+    cmds:
+      - go test ./...
+
+  lint:
+    desc: Run static analysis
+    cmds:
+      - go vet ./...
+
+  frontend-build:
+    desc: Build frontend assets for embedding
+    cmds:
+      - |
+        if [ -f frontend/package.json ]; then
+          cd frontend && npm run build
+        else
+          echo "frontend/package.json not found; skip frontend build"
+        fi
+
+  build:
+    desc: Build native binary with embedded frontend
+    deps: [frontend-build]
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+      - go build {{.GO_FLAGS}} -tags "production webkit2_41" -ldflags "{{.LD_FLAGS}}" -o {{.BUILD_DIR}}/{{.APP_NAME}} .
+
+  build-linux-amd64:
+    desc: Build Linux amd64 (dynamic linking)
+    deps: [frontend-build]
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}/linux
+      - |
+        GOOS=linux GOARCH=amd64 CGO_ENABLED=1 go build {{.GO_FLAGS}} -tags "production webkit2_41" \
+          -ldflags "{{.LD_FLAGS}}" \
+          -o {{.BUILD_DIR}}/linux/simpleeditor . \
+        || GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build {{.GO_FLAGS}} -tags "production webkit2_41" \
+          -ldflags "{{.LD_FLAGS}}" \
+          -o {{.BUILD_DIR}}/linux/simpleeditor .
+
+  build-darwin-amd64:
+    desc: Build macOS amd64
+    deps: [frontend-build]
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+      - GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build {{.GO_FLAGS}} -tags production -ldflags "{{.LD_FLAGS}}" -o {{.BUILD_DIR}}/{{.APP_NAME}}-darwin-amd64 .
+
+  build-darwin-arm64:
+    desc: Build macOS arm64
+    deps: [frontend-build]
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+      - GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build {{.GO_FLAGS}} -tags production -ldflags "{{.LD_FLAGS}}" -o {{.BUILD_DIR}}/{{.APP_NAME}}-darwin-arm64 .
+
+  build-windows-amd64:
+    desc: Build Windows amd64
+    deps: [frontend-build]
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+      - GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build {{.GO_FLAGS}} -tags production -ldflags "{{.LD_FLAGS}}" -o {{.BUILD_DIR}}/{{.APP_NAME}}-windows-amd64.exe .
+
+  build-linux:
+    desc: Build Linux amd64 binary with embedded assets
+    deps:
+      - build-linux-amd64
+
+  build-all:
+    desc: Build Linux/macOS/Windows binaries with embedded assets
+    deps:
+      - build-linux-amd64
+      - build-darwin-amd64
+      - build-darwin-arm64
+      - build-windows-amd64

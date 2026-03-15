@@ -1,0 +1,9 @@
+{
+  "name": "simplescreeneditor-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "echo \"Static dist is committed for now\"",
+    "dev": "echo \"Use wails dev from project root\""
+  }
+}

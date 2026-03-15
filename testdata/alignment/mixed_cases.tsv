@@ -1,0 +1,5 @@
+label	text	expectedWidth
+ascii_only	hello world	11
+korean_only	안녕하세요	10
+mixed_basic	abc한글def	10
+mixed_space	오늘 news 7	11
