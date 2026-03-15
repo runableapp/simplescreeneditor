@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Screen Editor - 80x25 固定幅テキストエディタ</title>
+  <meta name="description" content="Simple Screen Editor は、韓国語/英語の文字幅揃えを安定して扱うクロスプラットフォーム 80x25 GUI テキストエディタです。">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Google Analytics (replace G-XXXXXXXXXX with your Measurement ID) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+</head>
+<body>
+
+<a
+  href="https://buy.polar.sh/polar_cl_2RRA7HD1Pv9AFP7pAZRg8XDomwZc9WCLfHXaW0hdJZz"
+  class="support-float-btn"
+  data-polar-checkout
+  data-polar-checkout-theme="dark"
+  aria-label="小さな応援を送る"
+>❤️ 小さな応援を送る</a>
+
+<header>
+  <nav class="lang-switch" aria-label="言語選択">
+    <a href="index.html" hreflang="ko" lang="ko">🇰🇷 KO</a>
+    <a href="index.en.html" hreflang="en" lang="en">🇺🇸 EN</a>
+    <span class="active">🇯🇵 JA</span>
+    <a href="index.zh.html" hreflang="zh" lang="zh">🇨🇳 ZH</a>
+  </nav>
+  <img src="simpel_screen_editor_logo.webp" alt="Simple Screen Editor ロゴ" class="header-logo">
+  <p class="tagline">80x25 固定グリッド テキストエディタ</p>
+  <a href="https://github.com/runableapp/simplescreeneditor" class="btn github-btn" aria-label="GitHub リポジトリを開く">
+    <svg class="github-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+      0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52
+      -.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64
+      -.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65
+      0 0 1 8 4.77c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82
+      1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01
+      8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+    </svg>
+    <span>GitHub リポジトリを見る</span>
+  </a>
+</header>
+
+<div class="container">
+
+  <section>
+    <h2>💡 Simple Screen Editor とは？</h2>
+    <p>
+      <strong>Simple Screen Editor</strong> は、80x25 固定テキストセル環境向けの GUI スクリーンエディタです。
+      韓国語/英語が混在する入力でも文字幅の揃えを安定して維持します。
+    </p>
+    <p>
+      編集コアは Go で実装され、デスクトップシェルには Wails を使用しています。
+      単なる試験的ツールではなく、再現可能なテキストセル編集基盤の構築を目指しています。
+    </p>
+  </section>
+
+  <section>
+    <h2>✨ 主な機能</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>📐 80x25 固定グリッド</h3>
+        <p>一貫したセル単位編集のため、画面を 80 列 x 25 行に固定します。</p>
+      </div>
+      <div class="feature">
+        <h3>🇰🇷🇺🇸 韓国語/英語の幅揃え</h3>
+        <p>文字幅を認識し、挿入/削除時もカーソル位置とセル配置を安定して維持します。</p>
+      </div>
+      <div class="feature">
+        <h3>📋 クリップボード連携</h3>
+        <p>OS クリップボードのコピー/貼り付けに対応し、実用的な編集フローでそのまま使えます。</p>
+      </div>
+      <div class="feature">
+        <h3>💾 UTF-8 ファイル編集</h3>
+        <p>UTF-8 テキストの読み込み/保存に対応し、クロスプラットフォームでテストできます。</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>🖼️ スクリーンショット</h2>
+    <img
+      src="simple_screen_editor_screenshot.webp"
+      alt="Simple Screen Editor 実行画面"
+      class="screenshot-image"
+      loading="lazy"
+    >
+  </section>
+
+  <section>
+    <h2>🚀 クイックスタート</h2>
+    <p>
+      とても簡単です。実行ファイルは 1 つだけで十分です。
+      ターミナルで以下のように実行するか、ファイルをダブルクリックしてください。
+    </p>
+    <pre><code>simpleeditor</code></pre>
+    <p>
+      複雑な設定は不要です。単一の実行ファイルだけで使い始められます。
+    </p>
+  </section>
+
+  <section>
+    <h2>📚 ドキュメント</h2>
+    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+      <li><a href="../README.md">README.md</a> -- プロジェクト概要と開発コマンド</li>
+      <li><a href="../frontend/src/README.md">frontend/src/README.md</a> -- フロントエンド構成のメモ</li>
+    </ul>
+  </section>
+
+</div>
+
+<section class="container">
+  <h2>📄 ライセンス</h2>
+  <pre><code>--- English ---
+
+Simple Screen Editor - A fixed 80x25 text grid editor with robust Korean/English width alignment.
+Copyright (C) 2026  Runable.app
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.
+
+--- 日本語 ---
+
+Simple Screen Editor - 韓国語/英語の文字幅揃えを安定して処理する 80x25 固定テキストグリッドエディタ。
+Copyright (C) 2026  Runable.app
+
+このプログラムはフリーソフトウェアです。フリーソフトウェア財団が公表した
+GNU 一般公衆利用許諾書 バージョン3、または（あなたの選択により）それ以降の
+バージョンの条件に従って、再頒布または改変することができます。
+
+このプログラムは有用であることを期待して配布されますが、
+一切の保証はありません。商品性または特定目的適合性についての
+黙示的な保証も含め、いかなる保証もありません。
+詳しくは GNU 一般公衆利用許諾書をご覧ください。
+
+このプログラムとともに GNU 一般公衆利用許諾書の写しを
+受け取っているはずです。受け取っていない場合は
+&lt;https://www.gnu.org/licenses/&gt; を参照してください。</code></pre>
+</section>
+
+<section class="container" style="text-align: center; border-bottom: none;">
+  <h2>❤️ オープンソース支援</h2>
+  <p>このプロジェクトが役に立ったら、応援で継続開発を後押ししてください。</p>
+  <a
+    href="https://buy.polar.sh/polar_cl_2RRA7HD1Pv9AFP7pAZRg8XDomwZc9WCLfHXaW0hdJZz"
+    class="btn"
+    data-polar-checkout
+    data-polar-checkout-theme="dark"
+    aria-label="このオープンソースプロジェクトを支援"
+  >このオープンソースプロジェクトを支援</a>
+</section>
+
+<footer>
+  <img src="runable-logo.webp" alt="サービスロゴ" class="footer-logo">
+  <p>
+    Copyright &copy; 2026 <a href="https://runable.app" target="_blank" rel="noopener">Runable.app</a>.
+  </p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@polar-sh/checkout@0.1/dist/embed.global.js" defer data-auto-init></script>
+
+</body>
+</html>

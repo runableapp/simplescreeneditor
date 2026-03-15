@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Screen Editor - Fixed-width 80x25 Text Editor</title>
+  <meta name="description" content="Simple Screen Editor is a cross-platform 80x25 GUI text editor with robust Korean/English cell-width alignment.">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Google Analytics (replace G-XXXXXXXXXX with your Measurement ID) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+</head>
+<body>
+
+<a
+  href="https://buy.polar.sh/polar_cl_2RRA7HD1Pv9AFP7pAZRg8XDomwZc9WCLfHXaW0hdJZz"
+  class="support-float-btn"
+  data-polar-checkout
+  data-polar-checkout-theme="dark"
+  aria-label="Send a little support"
+>❤️ Send a little support</a>
+
+<header>
+  <nav class="lang-switch" aria-label="Language selector">
+    <a href="index.html" hreflang="ko" lang="ko">🇰🇷 KO</a>
+    <span class="active">🇺🇸 EN</span>
+    <a href="index.ja.html" hreflang="ja" lang="ja">🇯🇵 JA</a>
+    <a href="index.zh.html" hreflang="zh" lang="zh">🇨🇳 ZH</a>
+  </nav>
+  <img src="simpel_screen_editor_logo.webp" alt="Simple Screen Editor logo" class="header-logo">
+  <p class="tagline">Fixed 80x25 text grid editor</p>
+  <a href="https://github.com/runableapp/simplescreeneditor" class="btn github-btn" aria-label="Open GitHub repository">
+    <svg class="github-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+      0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52
+      -.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64
+      -.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65
+      0 0 1 8 4.77c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82
+      1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01
+      8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path>
+    </svg>
+    <span>View GitHub Repository</span>
+  </a>
+</header>
+
+<div class="container">
+
+  <section>
+    <h2>💡 What is Simple Screen Editor?</h2>
+    <p>
+      <strong>Simple Screen Editor</strong> is a GUI screen editor designed for fixed 80x25 text-cell environments,
+      with robust width alignment for mixed Korean/English input.
+    </p>
+    <p>
+      The editing core is implemented in Go, and the desktop shell is built with Wails.
+      It focuses on creating a reproducible text-cell editing foundation, not just a one-off experiment.
+    </p>
+  </section>
+
+  <section>
+    <h2>✨ Key Features</h2>
+    <div class="features">
+      <div class="feature">
+        <h3>📐 Fixed 80x25 Grid</h3>
+        <p>The screen is fixed at 80 columns x 25 rows for consistent cell-based editing.</p>
+      </div>
+      <div class="feature">
+        <h3>🇰🇷🇺🇸 Korean/English Width Alignment</h3>
+        <p>Character-width aware editing keeps cursor position and cell layout stable during insert/delete operations.</p>
+      </div>
+      <div class="feature">
+        <h3>📋 Clipboard Integration</h3>
+        <p>Supports OS clipboard copy/paste for practical everyday editing workflows.</p>
+      </div>
+      <div class="feature">
+        <h3>💾 UTF-8 File Editing</h3>
+        <p>Open and save UTF-8 text files, with cross-platform testing support.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>🖼️ Screenshot</h2>
+    <img
+      src="simple_screen_editor_screenshot.webp"
+      alt="Simple Screen Editor running screenshot"
+      class="screenshot-image"
+      loading="lazy"
+    >
+  </section>
+
+  <section>
+    <h2>🚀 Quick Start</h2>
+    <p>
+      It is simple. You only need one executable file.
+      Run it from a terminal as shown below, or just double-click the file.
+    </p>
+    <pre><code>simpleeditor</code></pre>
+    <p>
+      No complex setup required. A single executable is all you need.
+    </p>
+  </section>
+
+  <section>
+    <h2>📚 Docs</h2>
+    <ul style="margin-left: 1.5rem; margin-top: 0.5rem;">
+      <li><a href="../README.md">README.md</a> -- Project overview and development commands</li>
+      <li><a href="../frontend/src/README.md">frontend/src/README.md</a> -- Frontend structure notes</li>
+    </ul>
+  </section>
+
+</div>
+
+<section class="container">
+  <h2>📄 License / 라이선스</h2>
+  <pre><code>--- English ---
+
+Simple Screen Editor - A fixed 80x25 text grid editor with robust Korean/English width alignment.
+Copyright (C) 2026  Runable.app
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.</code></pre>
+</section>
+
+<section class="container" style="text-align: center; border-bottom: none;">
+  <h2>❤️ Support Open Source</h2>
+  <p>If this project helps you, your support helps keep development going.</p>
+  <a
+    href="https://buy.polar.sh/polar_cl_2RRA7HD1Pv9AFP7pAZRg8XDomwZc9WCLfHXaW0hdJZz"
+    class="btn"
+    data-polar-checkout
+    data-polar-checkout-theme="dark"
+    aria-label="Support this open-source project"
+  >Support this open-source project</a>
+</section>
+
+<footer>
+  <img src="runable-logo.webp" alt="Service logo" class="footer-logo">
+  <p>
+    Copyright &copy; 2026 <a href="https://runable.app" target="_blank" rel="noopener">Runable.app</a>.
+  </p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@polar-sh/checkout@0.1/dist/embed.global.js" defer data-auto-init></script>
+
+</body>
+</html>

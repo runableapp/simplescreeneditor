@@ -67,6 +67,29 @@ header {
   overflow: hidden;
 }
 
+.lang-switch {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.lang-switch a,
+.lang-switch .active {
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--border);
+  color: var(--accent);
+  background: #0000aa;
+}
+
+.lang-switch .active {
+  color: var(--accent2);
+  background: #000077;
+}
+
 .header-logo {
   max-width: 320px;
   width: min(80vw, 320px);
@@ -113,6 +136,12 @@ section p { margin-bottom: 1rem; }
 }
 
 @media (max-width: 720px) {
+  .lang-switch {
+    position: static;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
   .features {
     grid-template-columns: 1fr;
   }
