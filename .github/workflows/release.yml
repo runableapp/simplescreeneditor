@@ -71,7 +71,12 @@ jobs:
             mkdir -p frontend/dist
           fi
           if [ ! -f frontend/dist/index.html ]; then
-            printf '%s\n' '<!doctype html><html><head><meta charset="utf-8"><title>Release placeholder</title></head><body></body></html>' > frontend/dist/index.html
+            if [ -f cmd/simple80x25/assets/index.html ]; then
+              cp cmd/simple80x25/assets/index.html frontend/dist/index.html
+            else
+              echo "Missing frontend/dist/index.html and fallback cmd/simple80x25/assets/index.html" >&2
+              exit 1
+            fi
           fi
 
       - name: Build executable
@@ -79,7 +84,12 @@ jobs:
         run: |
           mkdir -p frontend/dist
           if [ ! -f frontend/dist/index.html ]; then
-            printf '%s\n' '<!doctype html><html><head><meta charset="utf-8"><title>Release placeholder</title></head><body></body></html>' > frontend/dist/index.html
+            if [ -f cmd/simple80x25/assets/index.html ]; then
+              cp cmd/simple80x25/assets/index.html frontend/dist/index.html
+            else
+              echo "Missing frontend/dist/index.html and fallback cmd/simple80x25/assets/index.html" >&2
+              exit 1
+            fi
           fi
 
           mkdir -p "dist/${{ matrix.platform }}"
