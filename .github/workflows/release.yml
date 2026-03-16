@@ -70,6 +70,9 @@ jobs:
           if [ ! -d frontend/dist ]; then
             mkdir -p frontend/dist
           fi
+          if [ -f docs/simpel_screen_editor_logo.webp ]; then
+            cp docs/simpel_screen_editor_logo.webp frontend/dist/simpel_screen_editor_logo.webp
+          fi
           if [ -f build/appicon.png ]; then
             cp build/appicon.png frontend/dist/appicon.png
           fi
@@ -82,6 +85,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p frontend/dist
+          if [ -f docs/simpel_screen_editor_logo.webp ]; then
+            cp docs/simpel_screen_editor_logo.webp frontend/dist/simpel_screen_editor_logo.webp
+          fi
           if [ -f build/appicon.png ]; then
             cp build/appicon.png frontend/dist/appicon.png
           fi

@@ -3,6 +3,8 @@ dist/
 build/bin/
 !frontend/dist/
 !frontend/dist/index.html
+!frontend/dist/appicon.png
+!frontend/dist/simpel_screen_editor_logo.webp
 
 # Frontend dependencies
 frontend/node_modules/
