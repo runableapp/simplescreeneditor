@@ -9,11 +9,13 @@ on:
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   build:
     if: startsWith(github.ref_name, 'v') && !startsWith(github.ref_name, 'vt')
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       GOPROXY: direct
     strategy:
       fail-fast: false

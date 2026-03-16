@@ -11,6 +11,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/linux"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 //go:embed all:frontend/dist
@@ -45,6 +46,10 @@ func main() {
 		},
 		Linux: &linux.Options{
 			Icon: appIcon,
+		},
+		Windows: &windows.Options{
+			// Work around GPU-process crashes seen on some WebView2/driver combinations.
+			WebviewGpuIsDisabled: true,
 		},
 		Bind: []any{bridge},
 	})
