@@ -99,16 +99,20 @@ jobs:
           mkdir -p "dist/${{ matrix.platform }}"
           output="dist/${{ matrix.platform }}/simpleeditor${{ matrix.ext }}"
           tags="production"
+          ldflags="-s -w"
           if [ "${{ matrix.goos }}" = "linux" ]; then
             tags="production webkit2_41"
+          fi
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            ldflags="-s -w -H=windowsgui"
           fi
           if [ "${{ matrix.goos }}" = "darwin" ]; then
             GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=${{ matrix.use_cgo }} \
               CGO_LDFLAGS="-framework UniformTypeIdentifiers" \
-              go build -trimpath -tags "$tags" -ldflags "-s -w" -o "$output" .
+              go build -trimpath -tags "$tags" -ldflags "$ldflags" -o "$output" .
           else
             GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} CGO_ENABLED=${{ matrix.use_cgo }} \
-              go build -trimpath -tags "$tags" -ldflags "-s -w" -o "$output" .
+              go build -trimpath -tags "$tags" -ldflags "$ldflags" -o "$output" .
           fi
 
       - name: Upload build artifact
