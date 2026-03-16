@@ -30,6 +30,8 @@
       }
       .toolbar {
         display: flex;
+        align-items: center;
+        flex-wrap: wrap;
         gap: 8px;
         padding: 10px;
       }
@@ -377,6 +379,9 @@
   </head>
   <body>
     <div class="toolbar">
+      <button id="openBtn">Open</button>
+      <button id="saveBtn">Save</button>
+      <button id="saveAsBtn">Save As</button>
       <button id="clearBtn">Clear</button>
       <button id="copyBtn">Copy Buffer</button>
       <button id="pasteBtn">Paste</button>
@@ -430,7 +435,7 @@
         />
       </div>
     </div>
-    <div id="hint">Ctrl+C: copy buffer, Ctrl+V: paste, arrows/backspace/delete/enter supported.</div>
+    <div id="hint">Ctrl+O: open, Ctrl+S: save, Ctrl+Shift+S: save as, Ctrl+C: copy buffer, Ctrl+V: paste, arrows/backspace/delete/enter supported.</div>
     <div id="footer">&copy; 2026 <a id="runableLink" href="https://runable.app" target="_blank" rel="noopener noreferrer">Runable.app</a>.</div>
     <script>
       const state = { rows: 25, cols: 80, lines: [], cursor: { row: 0, col: 0 } };
@@ -617,6 +622,15 @@
         });
         cursor.style.left = `${state.cursor.col * w}px`;
         cursor.style.top = `${state.cursor.row * h}px`;
+        if (next.filename) {
+          document.title = `Simple Screen Editor - ${next.filename}`;
+        } else {
+          document.title = "Simple Screen Editor";
+        }
+      }
+
+      function setStatus(_message, _isError = false) {
+        // Intentionally no-op: status line is hidden by design.
       }
 
       async function call(name, ...args) {
@@ -840,6 +854,22 @@
         if (ev.ctrlKey && ev.key.toLowerCase() === "a") {
           ev.preventDefault();
           selectAll();
+          setStatus("Selected all.");
+          return;
+        }
+        if (ev.ctrlKey && ev.key.toLowerCase() === "o") {
+          ev.preventDefault();
+          await openFile();
+          return;
+        }
+        if (ev.ctrlKey && ev.shiftKey && ev.key.toLowerCase() === "s") {
+          ev.preventDefault();
+          await saveFileAs();
+          return;
+        }
+        if (ev.ctrlKey && !ev.shiftKey && ev.key.toLowerCase() === "s") {
+          ev.preventDefault();
+          await saveFile();
           return;
         }
         if (ev.ctrlKey && ev.key.toLowerCase() === "c") {
@@ -852,6 +882,7 @@
           clearSelection();
           const next = await call("PasteFromClipboard");
           if (next) draw(next);
+          setStatus("Pasted from clipboard (ANSI-aware).");
           return;
         }
         if (ev.ctrlKey && ev.key === "ArrowLeft") {
@@ -1082,12 +1113,70 @@
         }
       });
 
-      async function clearScreen() {
-        clearSelection();
-        const next = await call("ClearScreen");
-        if (next) draw(next);
+      async function openFile() {
+        try {
+          const result = await call("OpenFileDialog");
+          if (!result || result.cancelled) {
+            setStatus("Open cancelled.");
+            return;
+          }
+          if (result.state) {
+            draw(result.state);
+            setStatus(`Opened: ${result.path}`);
+          }
+        } catch (err) {
+          setStatus(`Open failed: ${err}`, true);
+        }
       }
 
+      async function saveFile() {
+        try {
+          const result = await call("Save");
+          if (!result || result.cancelled) {
+            setStatus("Save cancelled.");
+            return;
+          }
+          if (result.state) {
+            draw(result.state);
+          }
+          setStatus(`Saved: ${result.path}`);
+        } catch (err) {
+          setStatus(`Save failed: ${err}`, true);
+        }
+      }
+
+      async function saveFileAs() {
+        try {
+          const result = await call("SaveAsDialog");
+          if (!result || result.cancelled) {
+            setStatus("Save As cancelled.");
+            return;
+          }
+          if (result.state) {
+            draw(result.state);
+          }
+          setStatus(`Saved As: ${result.path}`);
+        } catch (err) {
+          setStatus(`Save As failed: ${err}`, true);
+        }
+      }
+
+      async function clearScreen() {
+        try {
+          clearSelection();
+          const next = await call("ClearScreen");
+          if (next) {
+            draw(next);
+          }
+          setStatus("Screen cleared.");
+        } catch (err) {
+          setStatus(`Clear failed: ${err}`, true);
+        }
+      }
+
+      document.getElementById("openBtn").addEventListener("click", openFile);
+      document.getElementById("saveBtn").addEventListener("click", saveFile);
+      document.getElementById("saveAsBtn").addEventListener("click", saveFileAs);
       document.getElementById("clearBtn").addEventListener("click", clearScreen);
       document.getElementById("copyBtn").addEventListener("click", copyCurrentSelectionOrBuffer);
       document.getElementById("pasteBtn").addEventListener("click", async () => draw(await call("PasteFromClipboard")));

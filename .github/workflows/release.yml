@@ -70,26 +70,24 @@ jobs:
           if [ ! -d frontend/dist ]; then
             mkdir -p frontend/dist
           fi
+          if [ -f build/appicon.png ]; then
+            cp build/appicon.png frontend/dist/appicon.png
+          fi
           if [ ! -f frontend/dist/index.html ]; then
-            if [ -f cmd/simple80x25/assets/index.html ]; then
-              cp cmd/simple80x25/assets/index.html frontend/dist/index.html
-            else
-              echo "Missing frontend/dist/index.html and fallback cmd/simple80x25/assets/index.html" >&2
-              exit 1
-            fi
+            echo "Missing frontend/dist/index.html. Commit frontend/dist/index.html for release builds." >&2
+            exit 1
           fi
 
       - name: Build executable
         shell: bash
         run: |
           mkdir -p frontend/dist
+          if [ -f build/appicon.png ]; then
+            cp build/appicon.png frontend/dist/appicon.png
+          fi
           if [ ! -f frontend/dist/index.html ]; then
-            if [ -f cmd/simple80x25/assets/index.html ]; then
-              cp cmd/simple80x25/assets/index.html frontend/dist/index.html
-            else
-              echo "Missing frontend/dist/index.html and fallback cmd/simple80x25/assets/index.html" >&2
-              exit 1
-            fi
+            echo "Missing frontend/dist/index.html. Commit frontend/dist/index.html for release builds." >&2
+            exit 1
           fi
 
           mkdir -p "dist/${{ matrix.platform }}"
@@ -126,6 +124,8 @@ jobs:
 
       - name: Create platform zip archives
         run: |
+          chmod +x release-artifacts/linux/simpleeditor || true
+          chmod +x release-artifacts/mac/simpleeditor || true
           for platform in linux windows mac; do
             (cd release-artifacts && zip -r "../simpleeditor-${platform}.zip" "${platform}")
           done

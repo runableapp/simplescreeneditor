@@ -1,6 +1,8 @@
 # Build outputs
 dist/
 build/bin/
+!frontend/dist/
+!frontend/dist/index.html
 
 # Frontend dependencies
 frontend/node_modules/
