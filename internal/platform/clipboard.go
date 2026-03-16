@@ -30,7 +30,8 @@ func (OSClipboard) ReadText() (string, error) {
 
 func (OSClipboard) WriteText(text string) error {
 	if clipboardMode() == "wayland" {
-		cmd := exec.Command("wl-copy")
+		// Force plain-text MIME type so ANSI escape bytes remain copyable text.
+		cmd := exec.Command("wl-copy", "--type", "text/plain;charset=utf-8")
 		cmd.Stdin = bytes.NewBufferString(text)
 		if err := cmd.Run(); err == nil {
 			return nil
@@ -47,17 +48,24 @@ func clipboardMode() string {
 
 	sessionType := strings.ToLower(strings.TrimSpace(os.Getenv("XDG_SESSION_TYPE")))
 	isWaylandSession := os.Getenv("WAYLAND_DISPLAY") != "" || sessionType == "wayland"
-	if !isWaylandSession {
-		// Includes X11 and unknown Linux sessions; use normal path.
-		return "default"
-	}
+	hasWLClipboard := true
 	if _, err := exec.LookPath("wl-copy"); err != nil {
-		return "default"
+		hasWLClipboard = false
 	}
 	if _, err := exec.LookPath("wl-paste"); err != nil {
-		return "default"
+		hasWLClipboard = false
 	}
-	return "wayland"
+
+	// Primary path: explicit Wayland env markers + wl-clipboard tools.
+	if isWaylandSession && hasWLClipboard {
+		return "wayland"
+	}
+	// Fallback path: some launchers (for example AppImage wrappers) may strip
+	// session env vars even though Wayland clipboard tools are available.
+	if hasWLClipboard {
+		return "wayland"
+	}
+	return "default"
 }
 
 type MemoryClipboard struct {
