@@ -687,6 +687,10 @@
           await call("CopyBuffer");
           return;
         }
+        if (isFullScreenSelection(selection)) {
+          await call("CopyBuffer");
+          return;
+        }
         await call("CopyRegion", selection.startRow, selection.startCol, selection.endRow, selection.endCol);
       }
 
