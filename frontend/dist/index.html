@@ -320,6 +320,18 @@
         line-height: var(--cell-height);
         height: var(--cell-height);
       }
+      .ime-preview {
+        position: absolute;
+        white-space: pre;
+        line-height: var(--cell-height);
+        height: var(--cell-height);
+        font-family: var(--content-font);
+        pointer-events: none;
+        color: #ffff88;
+        background: rgba(0, 0, 0, 0.35);
+        opacity: 0.95;
+        z-index: 5;
+      }
       .eol-marker {
         position: absolute;
         line-height: var(--cell-height);
@@ -457,6 +469,8 @@
       let isMouseSelecting = false;
       let mouseSelectionHadDrag = false;
       let mouseSelectionShiftMode = false;
+      let textInsertChain = Promise.resolve();
+      let imePreview = "";
       const ansiColorMap = {
         black: "#000000",
         red: "#aa0000",
@@ -622,6 +636,27 @@
         });
         cursor.style.left = `${state.cursor.col * w}px`;
         cursor.style.top = `${state.cursor.row * h}px`;
+
+        let imeEl = document.getElementById("imePreview");
+        if (imePreview) {
+          if (!imeEl) {
+            imeEl = document.createElement("div");
+            imeEl.id = "imePreview";
+            imeEl.className = "ime-preview";
+            imeEl.setAttribute("aria-hidden", "true");
+            screen.appendChild(imeEl);
+          }
+          imeEl.textContent = imePreview;
+          imeEl.style.display = "block";
+          imeEl.style.left = `${state.cursor.col * w}px`;
+          imeEl.style.top = `${state.cursor.row * h}px`;
+          imeEl.style.width = "auto";
+          imeEl.style.minWidth = `${w}px`;
+        } else if (imeEl) {
+          imeEl.textContent = "";
+          imeEl.style.display = "none";
+        }
+
         if (next.filename) {
           document.title = `Simple Screen Editor - ${next.filename}`;
         } else {
@@ -651,8 +686,14 @@
 
       async function insertTextInput(text) {
         if (!text) return;
-        const next = await call("InsertText", text);
-        if (next) draw(next);
+        const run = async () => {
+          clearSelection();
+          const next = await call("InsertText", text);
+          if (next) draw(next);
+        };
+        const done = textInsertChain.then(run);
+        textInsertChain = done.catch(() => {});
+        await done;
       }
 
       function selectedLineStyle() {
@@ -1061,20 +1102,32 @@
         }
       });
 
+      keySink.addEventListener("compositionupdate", (ev) => {
+        imePreview = (ev.data != null && ev.data !== "") ? ev.data : keySink.value;
+        draw(state);
+      });
+
       keySink.addEventListener("input", async (ev) => {
-        if (ev.isComposing) return;
-        clearSelection();
+        if (ev.isComposing) {
+          imePreview = keySink.value || "";
+          draw(state);
+          return;
+        }
+        imePreview = "";
         const value = keySink.value;
         keySink.value = "";
         await insertTextInput(value);
       });
 
-      keySink.addEventListener("compositionend", async (ev) => {
-        if (ev.data) {
-          clearSelection();
-          await insertTextInput(ev.data);
-        }
-        keySink.value = "";
+      keySink.addEventListener("compositionend", () => {
+        imePreview = "";
+        draw(state);
+        setTimeout(() => {
+          const rest = keySink.value;
+          if (!rest) return;
+          keySink.value = "";
+          insertTextInput(rest);
+        }, 0);
       });
 
       screen.addEventListener("mousedown", async (ev) => {
