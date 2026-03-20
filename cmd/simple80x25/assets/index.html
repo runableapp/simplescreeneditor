@@ -349,16 +349,21 @@
         position: absolute;
         width: var(--cell-width);
         height: var(--cell-height);
-        background: #ffff00;
         box-sizing: border-box;
         pointer-events: none;
-        opacity: 0.75;
+        z-index: 10;
+        /* Tint + contrasting rings so the caret reads on dark blue, black, and bright ANSI fills */
+        background: rgba(255, 220, 0, 0.42);
+        box-shadow:
+          inset 0 0 0 1px rgba(0, 0, 0, 0.9),
+          0 0 0 1px rgba(255, 255, 255, 0.95);
+        opacity: 1;
         animation: cursor-blink 1s steps(1, end) infinite;
       }
       @keyframes cursor-blink {
         0%,
         49% {
-          opacity: 0.75;
+          opacity: 1;
         }
         50%,
         100% {
