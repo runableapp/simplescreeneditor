@@ -466,6 +466,7 @@
       let mouseSelectionShiftMode = false;
       let textInsertChain = Promise.resolve();
       let imePreview = "";
+      let deferCompositionCommitToMicrotask = false;
       const ansiColorMap = {
         black: "#000000",
         red: "#aa0000",
@@ -1081,21 +1082,29 @@
           draw(state);
           return;
         }
+        if (deferCompositionCommitToMicrotask) {
+          return;
+        }
         imePreview = "";
         const value = keySink.value;
         keySink.value = "";
         await insertTextInput(value);
       });
 
-      keySink.addEventListener("compositionend", () => {
+      keySink.addEventListener("compositionend", (ev) => {
         imePreview = "";
         draw(state);
-        setTimeout(() => {
-          const rest = keySink.value;
-          if (!rest) return;
+        const committedFallback = ev.data || "";
+        deferCompositionCommitToMicrotask = true;
+        queueMicrotask(() => {
+          deferCompositionCommitToMicrotask = false;
+          const fromSink = keySink.value;
           keySink.value = "";
-          insertTextInput(rest);
-        }, 0);
+          const text = fromSink || committedFallback;
+          if (text) {
+            insertTextInput(text);
+          }
+        });
       });
 
       screen.addEventListener("mousedown", async (ev) => {
