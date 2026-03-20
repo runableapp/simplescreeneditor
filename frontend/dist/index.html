@@ -1129,13 +1129,15 @@
         const committedFallback = ev.data || "";
         deferCompositionCommitToMicrotask = true;
         queueMicrotask(() => {
-          deferCompositionCommitToMicrotask = false;
-          const fromSink = keySink.value;
-          keySink.value = "";
-          const text = fromSink || committedFallback;
-          if (text) {
-            insertTextInput(text);
-          }
+          void (async () => {
+            deferCompositionCommitToMicrotask = false;
+            const fromSink = keySink.value;
+            keySink.value = "";
+            const text = fromSink || committedFallback;
+            if (text) {
+              await insertTextInput(text);
+            }
+          })().catch(() => {});
         });
       });
 
