@@ -290,6 +290,95 @@ func (b *Buffer) SetCharAtWithColors(row, col int, text, color, bgColor string) 
 	return nil
 }
 
+// OverwriteAtWithColors writes exactly one grapheme at row/col without
+// inserting or shifting existing content. It replaces overlapped cells.
+func (b *Buffer) OverwriteAtWithColors(row, col int, text, color, bgColor string) (int, error) {
+	if row < 0 || row >= Rows || col < 0 || col >= Columns {
+		return col, ErrOutOfBounds
+	}
+	segments := b.eng.Segment(text)
+	if len(segments) != 1 {
+		return col, ErrInvalidColumn
+	}
+	target := segments[0]
+	if target.Width < 1 || col+target.Width > Columns {
+		return col, ErrOutOfBounds
+	}
+	target.Color = color
+	target.BgColor = bgColor
+
+	type cell struct {
+		g        Grapheme
+		start    bool
+		cont     bool
+		startCol int
+	}
+	cells := make([]cell, Columns)
+
+	writeCol := 0
+	for _, g := range b.lines[row] {
+		if writeCol >= Columns {
+			break
+		}
+		if g.Width <= 1 {
+			cells[writeCol] = cell{g: g, start: true}
+			writeCol++
+			continue
+		}
+		if writeCol+1 >= Columns {
+			break
+		}
+		cells[writeCol] = cell{g: g, start: true}
+		cells[writeCol+1] = cell{cont: true, startCol: writeCol}
+		writeCol += g.Width
+	}
+
+	clearWidePair := func(c int) {
+		if c < 0 || c >= Columns {
+			return
+		}
+		if cells[c].cont {
+			s := cells[c].startCol
+			cells[s] = cell{}
+			if s+1 < Columns {
+				cells[s+1] = cell{}
+			}
+			return
+		}
+		if cells[c].start && cells[c].g.Width > 1 {
+			cells[c] = cell{}
+			if c+1 < Columns && cells[c+1].cont {
+				cells[c+1] = cell{}
+			}
+		}
+	}
+
+	for c := col; c < col+target.Width; c++ {
+		clearWidePair(c)
+	}
+	cells[col] = cell{g: target, start: true}
+	for c := col + 1; c < col+target.Width; c++ {
+		cells[c] = cell{cont: true, startCol: col}
+	}
+
+	rebuilt := make([]Grapheme, 0, len(b.lines[row]))
+	for c := 0; c < Columns; {
+		if !cells[c].start {
+			c++
+			continue
+		}
+		g := cells[c].g
+		rebuilt = append(rebuilt, g)
+		if g.Width <= 1 {
+			c++
+		} else {
+			c += g.Width
+		}
+	}
+	b.lines[row] = rebuilt
+	return col + target.Width, nil
+}
+
 func (b *Buffer) SnapColumn(row, col int) (int, error) {
 	if row < 0 || row >= Rows {
 		return col, ErrOutOfBounds

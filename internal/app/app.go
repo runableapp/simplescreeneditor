@@ -534,7 +534,7 @@ func (a *EditorApp) PasteFromClipboard() State {
 
 	text, err := a.clipboard.ReadText()
 	if err == nil {
-		a.insertANSITextLocked(text)
+		a.overwriteANSITextLocked(text)
 	}
 	return a.snapshotLocked()
 }
@@ -739,6 +739,103 @@ func (a *EditorApp) insertANSITextLocked(input string) {
 			}
 			if p.bgColor != "" {
 				_ = a.buffer.SetBGColorRange(a.cursor.Row, startCol, nextCol, p.bgColor)
+			}
+			a.cursor.Col = nextCol
+			a.dirty = true
+		}
+	}
+}
+
+func (a *EditorApp) overwriteANSITextLocked(input string) {
+	type piece struct {
+		text    string
+		fgColor string
+		bgColor string
+	}
+	defaultFGColor := a.activeANSIFGColor
+	defaultBGColor := a.activeANSIBGColor
+	currentFGColor := defaultFGColor
+	currentBGColor := defaultBGColor
+	pieces := make([]piece, 0)
+	var buf strings.Builder
+	flush := func() {
+		if buf.Len() == 0 {
+			return
+		}
+		pieces = append(pieces, piece{text: buf.String(), fgColor: currentFGColor, bgColor: currentBGColor})
+		buf.Reset()
+	}
+
+	for i := 0; i < len(input); {
+		if input[i] == 0x1b && i+1 < len(input) && input[i+1] == '[' {
+			j := i + 2
+			for j < len(input) && input[j] != 'm' {
+				j++
+			}
+			if j < len(input) && input[j] == 'm' {
+				flush()
+				params := input[i+2 : j]
+				if params == "" {
+					currentFGColor = ""
+					currentBGColor = ""
+				} else {
+					for _, part := range strings.Split(params, ";") {
+						if part == "" {
+							part = "0"
+						}
+						code, err := strconv.Atoi(part)
+						if err != nil {
+							continue
+						}
+						if code == 0 {
+							currentFGColor = ""
+							currentBGColor = ""
+							continue
+						}
+						if mapped, ok := ansiCodeToFGColorForApp(code); ok {
+							currentFGColor = mapped
+						}
+						if mapped, ok := ansiCodeToBGColorForApp(code); ok {
+							currentBGColor = mapped
+						}
+						if code == 39 {
+							currentFGColor = ""
+						}
+						if code == 49 {
+							currentBGColor = ""
+						}
+					}
+				}
+				i = j + 1
+				continue
+			}
+		}
+		buf.WriteByte(input[i])
+		i++
+	}
+	flush()
+
+	widthEngine := editor.NewWidthEngine(true)
+	lineStartCol := a.cursor.Col
+
+	for _, p := range pieces {
+		for _, segment := range widthEngine.Segment(p.text) {
+			if segment.Text == "\r" {
+				continue
+			}
+			if segment.Text == "\n" {
+				if a.cursor.Row < editor.Rows-1 {
+					a.cursor.Row++
+				}
+				a.cursor.Col = lineStartCol
+				continue
+			}
+			if a.cursor.Col >= editor.Columns {
+				continue
+			}
+			nextCol, err := a.buffer.OverwriteAtWithColors(a.cursor.Row, a.cursor.Col, segment.Text, p.fgColor, p.bgColor)
+			if err != nil {
+				continue
 			}
 			a.cursor.Col = nextCol
 			a.dirty = true
@@ -983,6 +1080,46 @@ func (a *EditorApp) lineMaskAt(row, col int, style lineStyle) int {
 	mask, ok := style.charToMask[ch]
 	if !ok {
 		return 0
+	}
+	// Horizontal/vertical glyphs represent two directions, but at endpoints we
+	// want the currently connected side(s) only. Infer active links from
+	// neighboring cells and fall back to the glyph's canonical mask when isolated.
+	if neighborMask := a.lineMaskFromNeighbors(row, col, style); neighborMask != 0 {
+		return neighborMask & mask
+	}
+	return mask
+}
+
+func (a *EditorApp) lineMaskFromNeighbors(row, col int, style lineStyle) int {
+	type direction struct {
+		dr  int
+		dc  int
+		bit int
+	}
+	dirs := []direction{
+		{dr: -1, dc: 0, bit: connNorth},
+		{dr: 0, dc: 1, bit: connEast},
+		{dr: 1, dc: 0, bit: connSouth},
+		{dr: 0, dc: -1, bit: connWest},
+	}
+	mask := 0
+	for _, dir := range dirs {
+		nr := row + dir.dr
+		nc := col + dir.dc
+		if nr < 0 || nr >= editor.Rows || nc < 0 || nc >= editor.Columns {
+			continue
+		}
+		neighbor, err := a.buffer.CharAt(nr, nc)
+		if err != nil || neighbor == "" {
+			continue
+		}
+		neighborMask, ok := style.charToMask[neighbor]
+		if !ok {
+			continue
+		}
+		if neighborMask&oppositeBit(dir.bit) != 0 {
+			mask |= dir.bit
+		}
 	}
 	return mask
 }

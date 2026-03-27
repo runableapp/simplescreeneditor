@@ -94,11 +94,32 @@ func TestLineDrawingCreatesCornersAndIntersections(t *testing.T) {
 	a.DrawLineUp("single")
 
 	lines := a.buffer.LinesAsText()
-	if lines[0] != "┬┬" {
-		t.Fatalf("unexpected top line after intersections: %q", lines[0])
+	if lines[0] != "┌┐" {
+		t.Fatalf("unexpected top line after loop corners: %q", lines[0])
 	}
-	if lines[1] != "┴┤" {
-		t.Fatalf("unexpected second line after corners: %q", lines[1])
+	if lines[1] != "└┘" {
+		t.Fatalf("unexpected second line after loop corners: %q", lines[1])
+	}
+}
+
+func TestLineDrawingTurnUsesCornerThenUpgradesWhenConnected(t *testing.T) {
+	a := New(&platform.MemoryClipboard{})
+
+	a.MoveDown()
+	a.DrawLineRight("double")
+	a.DrawLineUp("double")
+
+	lines := a.buffer.LinesAsText()
+	if lines[1] != "═╝" {
+		t.Fatalf("turn should produce corner without phantom branch, got %q", lines[1])
+	}
+
+	// Add a real east connection later; the same cell should upgrade to a tee.
+	a.MoveDown()
+	a.DrawLineRight("double")
+	lines = a.buffer.LinesAsText()
+	if lines[1] != "═╩═" {
+		t.Fatalf("corner should upgrade when east connection is added, got %q", lines[1])
 	}
 }
 
@@ -160,6 +181,27 @@ func TestPasteFromClipboardParsesANSIColors(t *testing.T) {
 	}
 	if state.Lines[0][1].Text != "B" || state.Lines[0][1].Color != "" {
 		t.Fatalf("reset color parse failed: %+v", state.Lines[0][1])
+	}
+}
+
+func TestPasteFromClipboardOverwritesWithoutPushingLines(t *testing.T) {
+	clip := &platform.MemoryClipboard{}
+	a := New(clip)
+
+	a.InsertText("AAAA")
+	a.SetCursor(1, 0)
+	a.InsertText("BBBB")
+
+	a.SetCursor(0, 1)
+	_ = clip.WriteText("Z\nY")
+	a.PasteFromClipboard()
+
+	lines := a.buffer.LinesAsText()
+	if !strings.HasPrefix(lines[0], "AZAA") {
+		t.Fatalf("row 0 should be overwritten in place, got %q", lines[0])
+	}
+	if !strings.HasPrefix(lines[1], "BYBB") {
+		t.Fatalf("row 1 should be overwritten in place, got %q", lines[1])
 	}
 }
 
