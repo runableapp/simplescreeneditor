@@ -172,6 +172,9 @@
         gap: 6px;
         margin-bottom: 6px;
       }
+      #hanjaListRow[hidden] {
+        display: none;
+      }
       #hanjaListRow select {
         margin-bottom: 0;
         flex: 1 1 0;
@@ -552,6 +555,11 @@
           </div>
           <div id="colorTool">
             <div id="colorToolTitle">ANSI Color</div>
+            <div class="ansi-color-menu" id="ansiColorMenu">
+              <button id="ansiColorToggle" type="button">(no color)</button>
+              <div id="ansiColorOptions" hidden></div>
+            </div>
+            <input type="hidden" id="ansiColorSelect" value="" />
             <div id="ansiApplyModeGroup">
               <label class="ansi-mode-option">
                 <input type="radio" name="ansiApplyMode" value="fg" checked />
@@ -562,11 +570,6 @@
                 <span>background</span>
               </label>
             </div>
-            <div class="ansi-color-menu" id="ansiColorMenu">
-              <button id="ansiColorToggle" type="button">(no color)</button>
-              <div id="ansiColorOptions" hidden></div>
-            </div>
-            <input type="hidden" id="ansiColorSelect" value="" />
             <button id="clearColorBtn" type="button">Clear Color</button>
           </div>
         </aside>
@@ -706,16 +709,26 @@
           });
         }
 
-        function refreshReadingSelect() {
-          const initial = initialEl.value;
-          const readings = byInitial[initial] || [];
-          readingEl.innerHTML = readings.map((r) => `<option value="${r}">${r} (${(hanjaReadingMap[r] || []).length})</option>`).join("");
-          const selected = readingEl.value || readings[0] || "";
+        function renderSelectedReading() {
+          const selected = readingEl.value || "";
           if (!selected) {
             renderChars([], "no result");
             return;
           }
           renderChars(hanjaReadingMap[selected] || [], `${selected} 음`);
+        }
+
+        function refreshReadingSelect(keepSelection = false) {
+          const initial = initialEl.value;
+          const readings = byInitial[initial] || [];
+          const prev = keepSelection ? readingEl.value : "";
+          readingEl.innerHTML = readings.map((r) => `<option value="${r}">${r} (${(hanjaReadingMap[r] || []).length})</option>`).join("");
+          if (prev && readings.includes(prev)) {
+            readingEl.value = prev;
+          } else if (readings.length > 0) {
+            readingEl.value = readings[0];
+          }
+          renderSelectedReading();
         }
 
         function setMode(mode) {
@@ -728,7 +741,7 @@
             const label = q ? `${q} 음` : "type reading";
             renderChars(chars, label);
           } else {
-            refreshReadingSelect();
+            refreshReadingSelect(true);
           }
         }
 
@@ -737,8 +750,8 @@
 
         modeEl.addEventListener("change", () => setMode(modeEl.value));
         searchEl.addEventListener("input", () => setMode("search"));
-        initialEl.addEventListener("change", refreshReadingSelect);
-        readingEl.addEventListener("change", refreshReadingSelect);
+        initialEl.addEventListener("change", () => refreshReadingSelect(false));
+        readingEl.addEventListener("change", renderSelectedReading);
 
         setMode(modeEl.value || "search");
       }

@@ -34,11 +34,11 @@ func main() {
 	err := wails.Run(&options.App{
 		Title:     windowTitle,
 		Width:     1360,
-		Height:    840,
+		Height:    800,
 		MinWidth:  1360,
-		MinHeight: 840,
+		MinHeight: 800,
 		MaxWidth:  1360,
-		MaxHeight: 840,
+		MaxHeight: 800,
 		DisableResize: true,
 		OnStartup: bridge.Startup,
 		AssetServer: &assetserver.Options{
