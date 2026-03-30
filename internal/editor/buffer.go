@@ -390,11 +390,15 @@ func (b *Buffer) SnapColumn(row, col int) (int, error) {
 }
 
 type RowToken struct {
-	Col   int    `json:"col"`
-	Width int    `json:"width"`
-	Text  string `json:"text"`
-	Color string `json:"color,omitempty"`
-	BgColor string `json:"bgColor,omitempty"`
+	Col       int    `json:"col"`
+	Width     int    `json:"width"`
+	Text      string `json:"text"`
+	Color     string `json:"color,omitempty"`
+	BgColor   string `json:"bgColor,omitempty"`
+	Bold      bool   `json:"bold,omitempty"`
+	Italic    bool   `json:"italic,omitempty"`
+	Underline bool   `json:"underline,omitempty"`
+	Inverse   bool   `json:"inverse,omitempty"`
 }
 
 func (b *Buffer) RenderTokens(row int) ([]RowToken, error) {
@@ -405,11 +409,15 @@ func (b *Buffer) RenderTokens(row int) ([]RowToken, error) {
 	col := 0
 	for _, g := range b.lines[row] {
 		tokens = append(tokens, RowToken{
-			Col:   col,
-			Width: g.Width,
-			Text:  g.Text,
-			Color: g.Color,
-			BgColor: g.BgColor,
+			Col:       col,
+			Width:     g.Width,
+			Text:      g.Text,
+			Color:     g.Color,
+			BgColor:   g.BgColor,
+			Bold:      g.Bold,
+			Italic:    g.Italic,
+			Underline: g.Underline,
+			Inverse:   g.Inverse,
 		})
 		col += g.Width
 	}
@@ -454,11 +462,38 @@ func (b *Buffer) SetBGColorRange(row, startCol, endCol int, bgColor string) erro
 	return nil
 }
 
+// SetTextStyleRange sets bold/italic/underline/inverse for graphemes overlapping [startCol, endCol).
+func (b *Buffer) SetTextStyleRange(row, startCol, endCol int, bold, italic, underline, inverse bool) error {
+	if row < 0 || row >= Rows || startCol < 0 || endCol < startCol {
+		return ErrOutOfBounds
+	}
+	boundaries, err := b.lineBoundaries(row)
+	if err != nil {
+		return err
+	}
+	for i := 0; i < len(b.lines[row]); i++ {
+		segStart := boundaries[i]
+		segEnd := boundaries[i+1]
+		if segStart >= endCol || segEnd <= startCol {
+			continue
+		}
+		b.lines[row][i].Bold = bold
+		b.lines[row][i].Italic = italic
+		b.lines[row][i].Underline = underline
+		b.lines[row][i].Inverse = inverse
+	}
+	return nil
+}
+
 func (b *Buffer) ClearColors() {
 	for row := 0; row < Rows; row++ {
 		for i := range b.lines[row] {
 			b.lines[row][i].Color = ""
 			b.lines[row][i].BgColor = ""
+			b.lines[row][i].Bold = false
+			b.lines[row][i].Italic = false
+			b.lines[row][i].Underline = false
+			b.lines[row][i].Inverse = false
 		}
 	}
 }
@@ -561,6 +596,10 @@ func (b *Buffer) LinesAsANSIText() []string {
 		var builder strings.Builder
 		activeColor := ""
 		activeBGColor := ""
+		activeBold := false
+		activeItalic := false
+		activeUnderline := false
+		activeInverse := false
 		for _, g := range b.lines[row] {
 			if g.Color != activeColor {
 				if g.Color == "" {
@@ -584,9 +623,41 @@ func (b *Buffer) LinesAsANSIText() []string {
 					activeBGColor = g.BgColor
 				}
 			}
+			if activeBold && !g.Bold {
+				builder.WriteString("\x1b[22m")
+				activeBold = false
+			}
+			if activeItalic && !g.Italic {
+				builder.WriteString("\x1b[23m")
+				activeItalic = false
+			}
+			if activeUnderline && !g.Underline {
+				builder.WriteString("\x1b[24m")
+				activeUnderline = false
+			}
+			if activeInverse && !g.Inverse {
+				builder.WriteString("\x1b[27m")
+				activeInverse = false
+			}
+			if !activeBold && g.Bold {
+				builder.WriteString("\x1b[1m")
+				activeBold = true
+			}
+			if !activeItalic && g.Italic {
+				builder.WriteString("\x1b[3m")
+				activeItalic = true
+			}
+			if !activeUnderline && g.Underline {
+				builder.WriteString("\x1b[4m")
+				activeUnderline = true
+			}
+			if !activeInverse && g.Inverse {
+				builder.WriteString("\x1b[7m")
+				activeInverse = true
+			}
 			builder.WriteString(g.Text)
 		}
-		if activeColor != "" || activeBGColor != "" {
+		if activeColor != "" || activeBGColor != "" || activeBold || activeItalic || activeUnderline || activeInverse {
 			builder.WriteString("\x1b[0m")
 		}
 		out = append(out, builder.String())

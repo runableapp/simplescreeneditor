@@ -62,10 +62,14 @@ func (w *WidthEngine) GraphemeWidth(cluster string) int {
 }
 
 type Grapheme struct {
-	Text  string `json:"text"`
-	Width int    `json:"width"`
-	Color string `json:"color,omitempty"`
-	BgColor string `json:"bgColor,omitempty"`
+	Text      string `json:"text"`
+	Width     int    `json:"width"`
+	Color     string `json:"color,omitempty"`
+	BgColor   string `json:"bgColor,omitempty"`
+	Bold      bool   `json:"bold,omitempty"`
+	Italic    bool   `json:"italic,omitempty"`
+	Underline bool   `json:"underline,omitempty"`
+	Inverse   bool   `json:"inverse,omitempty"`
 }
 
 func (w *WidthEngine) Segment(text string) []Grapheme {

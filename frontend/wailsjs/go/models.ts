@@ -99,6 +99,10 @@ export namespace editor {
 	    text: string;
 	    color?: string;
 	    bgColor?: string;
+	    bold?: boolean;
+	    italic?: boolean;
+	    underline?: boolean;
+	    inverse?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new RowToken(source);
@@ -111,6 +115,10 @@ export namespace editor {
 	        this.text = source["text"];
 	        this.color = source["color"];
 	        this.bgColor = source["bgColor"];
+	        this.bold = source["bold"];
+	        this.italic = source["italic"];
+	        this.underline = source["underline"];
+	        this.inverse = source["inverse"];
 	    }
 	}
 

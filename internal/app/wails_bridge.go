@@ -129,6 +129,10 @@ func (b *Bridge) SetRegionBGColor(startRow, startCol, endRow, endCol int, color 
 	return b.editor.SetRegionBGColor(startRow, startCol, endRow, endCol, color)
 }
 
+func (b *Bridge) SetRegionTextStyle(startRow, startCol, endRow, endCol int, style string) State {
+	return b.editor.SetRegionTextStyle(startRow, startCol, endRow, endCol, style)
+}
+
 func (b *Bridge) FillRegion(startRow, startCol, endRow, endCol int, text string) State {
 	return b.editor.FillRegion(startRow, startCol, endRow, endCol, text)
 }

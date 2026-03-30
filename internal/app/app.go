@@ -430,6 +430,34 @@ func (a *EditorApp) SetRegionBGColor(startRow, startCol, endRow, endCol int, col
 	return a.snapshotLocked()
 }
 
+// SetRegionTextStyle applies SGR-style text attributes to the selected rectangle.
+// style is one of: "normal", "bold", "italic", "underline", "inverse".
+func (a *EditorApp) SetRegionTextStyle(startRow, startCol, endRow, endCol int, style string) State {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	var bold, italic, underline, inverse bool
+	switch strings.ToLower(strings.TrimSpace(style)) {
+	case "", "normal":
+		// all false
+	case "bold":
+		bold = true
+	case "italic":
+		italic = true
+	case "underline":
+		underline = true
+	case "inverse":
+		inverse = true
+	default:
+		// unknown: treat as normal
+	}
+	r1, c1, r2, c2 := normalizeRect(startRow, startCol, endRow, endCol)
+	for row := r1; row <= r2; row++ {
+		_ = a.buffer.SetTextStyleRange(row, c1, c2+1, bold, italic, underline, inverse)
+	}
+	a.dirty = true
+	return a.snapshotLocked()
+}
+
 func (a *EditorApp) FillRegion(startRow, startCol, endRow, endCol int, text string) State {
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -472,6 +500,10 @@ func (a *EditorApp) CopyRegion(startRow, startCol, endRow, endCol int) error {
 		cellText := make([]string, editor.Columns)
 		cellColor := make([]string, editor.Columns)
 		cellBGColor := make([]string, editor.Columns)
+		cellBold := make([]bool, editor.Columns)
+		cellItalic := make([]bool, editor.Columns)
+		cellUnderline := make([]bool, editor.Columns)
+		cellInverse := make([]bool, editor.Columns)
 		for _, token := range tokens {
 			if token.Col < 0 || token.Col >= editor.Columns {
 				continue
@@ -479,14 +511,26 @@ func (a *EditorApp) CopyRegion(startRow, startCol, endRow, endCol int) error {
 			cellText[token.Col] = token.Text
 			cellColor[token.Col] = token.Color
 			cellBGColor[token.Col] = token.BgColor
+			cellBold[token.Col] = token.Bold
+			cellItalic[token.Col] = token.Italic
+			cellUnderline[token.Col] = token.Underline
+			cellInverse[token.Col] = token.Inverse
 			for i := 1; i < token.Width && token.Col+i < editor.Columns; i++ {
 				cellText[token.Col+i] = " "
 				cellColor[token.Col+i] = token.Color
 				cellBGColor[token.Col+i] = token.BgColor
+				cellBold[token.Col+i] = token.Bold
+				cellItalic[token.Col+i] = token.Italic
+				cellUnderline[token.Col+i] = token.Underline
+				cellInverse[token.Col+i] = token.Inverse
 			}
 		}
 		activeColor := ""
 		activeBGColor := ""
+		activeBold := false
+		activeItalic := false
+		activeUnderline := false
+		activeInverse := false
 		for col := c1; col <= c2; col++ {
 			color := cellColor[col]
 			bgColor := cellBGColor[col]
@@ -512,13 +556,49 @@ func (a *EditorApp) CopyRegion(startRow, startCol, endRow, endCol int) error {
 					activeBGColor = bgColor
 				}
 			}
+			bold := cellBold[col]
+			italic := cellItalic[col]
+			underline := cellUnderline[col]
+			inverse := cellInverse[col]
+			if activeBold && !bold {
+				out.WriteString("\x1b[22m")
+				activeBold = false
+			}
+			if activeItalic && !italic {
+				out.WriteString("\x1b[23m")
+				activeItalic = false
+			}
+			if activeUnderline && !underline {
+				out.WriteString("\x1b[24m")
+				activeUnderline = false
+			}
+			if activeInverse && !inverse {
+				out.WriteString("\x1b[27m")
+				activeInverse = false
+			}
+			if !activeBold && bold {
+				out.WriteString("\x1b[1m")
+				activeBold = true
+			}
+			if !activeItalic && italic {
+				out.WriteString("\x1b[3m")
+				activeItalic = true
+			}
+			if !activeUnderline && underline {
+				out.WriteString("\x1b[4m")
+				activeUnderline = true
+			}
+			if !activeInverse && inverse {
+				out.WriteString("\x1b[7m")
+				activeInverse = true
+			}
 			ch := cellText[col]
 			if ch == "" {
 				ch = " "
 			}
 			out.WriteString(ch)
 		}
-		if activeColor != "" || activeBGColor != "" {
+		if activeColor != "" || activeBGColor != "" || activeBold || activeItalic || activeUnderline || activeInverse {
 			out.WriteString("\x1b[0m")
 		}
 		if row < r2 {
@@ -617,6 +697,56 @@ func (a *EditorApp) snapshotLocked() State {
 	}
 }
 
+func applyANSISGRToState(params string, fg, bg *string, bold, italic, underline, inverse *bool) {
+	if params == "" {
+		*fg, *bg = "", ""
+		*bold, *italic, *underline, *inverse = false, false, false, false
+		return
+	}
+	for _, part := range strings.Split(params, ";") {
+		p := part
+		if p == "" {
+			p = "0"
+		}
+		code, err := strconv.Atoi(p)
+		if err != nil {
+			continue
+		}
+		switch code {
+		case 0:
+			*fg, *bg = "", ""
+			*bold, *italic, *underline, *inverse = false, false, false, false
+		case 1:
+			*bold = true
+		case 22:
+			*bold = false
+		case 3:
+			*italic = true
+		case 23:
+			*italic = false
+		case 4:
+			*underline = true
+		case 24:
+			*underline = false
+		case 7:
+			*inverse = true
+		case 27:
+			*inverse = false
+		case 39:
+			*fg = ""
+		case 49:
+			*bg = ""
+		default:
+			if mapped, ok := ansiCodeToFGColorForApp(code); ok {
+				*fg = mapped
+			}
+			if mapped, ok := ansiCodeToBGColorForApp(code); ok {
+				*bg = mapped
+			}
+		}
+	}
+}
+
 func (a *EditorApp) insertTextLocked(input string) {
 	widthEngine := editor.NewWidthEngine(true)
 	for _, segment := range widthEngine.Segment(input) {
@@ -647,21 +777,37 @@ func (a *EditorApp) insertTextLocked(input string) {
 
 func (a *EditorApp) insertANSITextLocked(input string) {
 	type piece struct {
-		text    string
-		fgColor string
-		bgColor string
+		text            string
+		fgColor         string
+		bgColor         string
+		bold            bool
+		italic          bool
+		underline       bool
+		inverse         bool
 	}
 	defaultFGColor := a.activeANSIFGColor
 	defaultBGColor := a.activeANSIBGColor
 	currentFGColor := defaultFGColor
 	currentBGColor := defaultBGColor
+	currentBold := false
+	currentItalic := false
+	currentUnderline := false
+	currentInverse := false
 	pieces := make([]piece, 0)
 	var buf strings.Builder
 	flush := func() {
 		if buf.Len() == 0 {
 			return
 		}
-		pieces = append(pieces, piece{text: buf.String(), fgColor: currentFGColor, bgColor: currentBGColor})
+		pieces = append(pieces, piece{
+			text:      buf.String(),
+			fgColor:   currentFGColor,
+			bgColor:   currentBGColor,
+			bold:      currentBold,
+			italic:    currentItalic,
+			underline: currentUnderline,
+			inverse:   currentInverse,
+		})
 		buf.Reset()
 	}
 
@@ -674,37 +820,7 @@ func (a *EditorApp) insertANSITextLocked(input string) {
 			if j < len(input) && input[j] == 'm' {
 				flush()
 				params := input[i+2 : j]
-				if params == "" {
-					currentFGColor = ""
-					currentBGColor = ""
-				} else {
-					for _, part := range strings.Split(params, ";") {
-						if part == "" {
-							part = "0"
-						}
-						code, err := strconv.Atoi(part)
-						if err != nil {
-							continue
-						}
-						if code == 0 {
-							currentFGColor = ""
-							currentBGColor = ""
-							continue
-						}
-						if mapped, ok := ansiCodeToFGColorForApp(code); ok {
-							currentFGColor = mapped
-						}
-						if mapped, ok := ansiCodeToBGColorForApp(code); ok {
-							currentBGColor = mapped
-						}
-						if code == 39 {
-							currentFGColor = ""
-						}
-						if code == 49 {
-							currentBGColor = ""
-						}
-					}
-				}
+				applyANSISGRToState(params, &currentFGColor, &currentBGColor, &currentBold, &currentItalic, &currentUnderline, &currentInverse)
 				i = j + 1
 				continue
 			}
@@ -740,6 +856,7 @@ func (a *EditorApp) insertANSITextLocked(input string) {
 			if p.bgColor != "" {
 				_ = a.buffer.SetBGColorRange(a.cursor.Row, startCol, nextCol, p.bgColor)
 			}
+			_ = a.buffer.SetTextStyleRange(a.cursor.Row, startCol, nextCol, p.bold, p.italic, p.underline, p.inverse)
 			a.cursor.Col = nextCol
 			a.dirty = true
 		}
@@ -748,21 +865,37 @@ func (a *EditorApp) insertANSITextLocked(input string) {
 
 func (a *EditorApp) overwriteANSITextLocked(input string) {
 	type piece struct {
-		text    string
-		fgColor string
-		bgColor string
+		text            string
+		fgColor         string
+		bgColor         string
+		bold            bool
+		italic          bool
+		underline       bool
+		inverse         bool
 	}
 	defaultFGColor := a.activeANSIFGColor
 	defaultBGColor := a.activeANSIBGColor
 	currentFGColor := defaultFGColor
 	currentBGColor := defaultBGColor
+	currentBold := false
+	currentItalic := false
+	currentUnderline := false
+	currentInverse := false
 	pieces := make([]piece, 0)
 	var buf strings.Builder
 	flush := func() {
 		if buf.Len() == 0 {
 			return
 		}
-		pieces = append(pieces, piece{text: buf.String(), fgColor: currentFGColor, bgColor: currentBGColor})
+		pieces = append(pieces, piece{
+			text:      buf.String(),
+			fgColor:   currentFGColor,
+			bgColor:   currentBGColor,
+			bold:      currentBold,
+			italic:    currentItalic,
+			underline: currentUnderline,
+			inverse:   currentInverse,
+		})
 		buf.Reset()
 	}
 
@@ -775,37 +908,7 @@ func (a *EditorApp) overwriteANSITextLocked(input string) {
 			if j < len(input) && input[j] == 'm' {
 				flush()
 				params := input[i+2 : j]
-				if params == "" {
-					currentFGColor = ""
-					currentBGColor = ""
-				} else {
-					for _, part := range strings.Split(params, ";") {
-						if part == "" {
-							part = "0"
-						}
-						code, err := strconv.Atoi(part)
-						if err != nil {
-							continue
-						}
-						if code == 0 {
-							currentFGColor = ""
-							currentBGColor = ""
-							continue
-						}
-						if mapped, ok := ansiCodeToFGColorForApp(code); ok {
-							currentFGColor = mapped
-						}
-						if mapped, ok := ansiCodeToBGColorForApp(code); ok {
-							currentBGColor = mapped
-						}
-						if code == 39 {
-							currentFGColor = ""
-						}
-						if code == 49 {
-							currentBGColor = ""
-						}
-					}
-				}
+				applyANSISGRToState(params, &currentFGColor, &currentBGColor, &currentBold, &currentItalic, &currentUnderline, &currentInverse)
 				i = j + 1
 				continue
 			}
@@ -833,10 +936,12 @@ func (a *EditorApp) overwriteANSITextLocked(input string) {
 			if a.cursor.Col >= editor.Columns {
 				continue
 			}
+			startCol := a.cursor.Col
 			nextCol, err := a.buffer.OverwriteAtWithColors(a.cursor.Row, a.cursor.Col, segment.Text, p.fgColor, p.bgColor)
 			if err != nil {
 				continue
 			}
+			_ = a.buffer.SetTextStyleRange(a.cursor.Row, startCol, nextCol, p.bold, p.italic, p.underline, p.inverse)
 			a.cursor.Col = nextCol
 			a.dirty = true
 		}

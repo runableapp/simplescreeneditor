@@ -142,6 +142,10 @@ export function SetRegionColor(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['app']['Bridge']['SetRegionColor'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function SetRegionTextStyle(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['app']['Bridge']['SetRegionTextStyle'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function Snapshot() {
   return window['go']['app']['Bridge']['Snapshot']();
 }

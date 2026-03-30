@@ -133,6 +133,27 @@
         flex-direction: column;
         gap: 6px;
       }
+      #textStyleTool {
+        border-bottom: 1px solid #34475d;
+        padding: 6px;
+        background: #0f1828;
+      }
+      #textStyleTitle {
+        font-size: 12px;
+        color: #9ac4ff;
+        margin-bottom: 6px;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
+      #textStyleSelect {
+        width: 100%;
+        box-sizing: border-box;
+        background: #ffffff;
+        color: #111111;
+        border: 1px solid #3a506b;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-family: "Noto Sans", "Segoe UI", sans-serif;
+      }
       #specialCharTitle {
         padding: 6px 10px;
         border-bottom: 1px solid #34475d;
@@ -526,6 +547,16 @@
       </div>
       <div id="sideRail">
         <aside id="specialCharPanel">
+          <div id="textStyleTool">
+            <div id="textStyleTitle">Text style (selection)</div>
+            <select id="textStyleSelect" aria-label="Text style for selection">
+              <option value="normal">Normal</option>
+              <option value="bold">Bold</option>
+              <option value="italic">Italic</option>
+              <option value="underline">Underline</option>
+              <option value="inverse">Inverse</option>
+            </select>
+          </div>
           <div id="specialCharTitle">Special Char</div>
           <div id="hanjaTool">
             <div id="hanjaToolTitle">Hanja Input</div>
@@ -877,11 +908,23 @@
             el.style.left = `${token.col * w}px`;
             el.style.top = `${row * h}px`;
             el.style.width = `${token.width * w}px`;
-            if (token.color && ansiColorMap[token.color]) {
-              el.style.color = ansiColorMap[token.color];
-            }
-            if (token.bgColor && ansiColorMap[token.bgColor]) {
-              el.style.backgroundColor = ansiColorMap[token.bgColor];
+            el.style.fontWeight = token.bold ? "700" : "";
+            el.style.fontStyle = token.italic ? "italic" : "";
+            el.style.textDecoration = token.underline ? "underline" : "";
+            if (token.inverse) {
+              const fg = token.color && ansiColorMap[token.color] ? ansiColorMap[token.color] : "#ffffff";
+              const bg = token.bgColor && ansiColorMap[token.bgColor] ? ansiColorMap[token.bgColor] : "#0000aa";
+              el.style.color = bg;
+              el.style.backgroundColor = fg;
+            } else {
+              el.style.color = "";
+              el.style.backgroundColor = "";
+              if (token.color && ansiColorMap[token.color]) {
+                el.style.color = ansiColorMap[token.color];
+              }
+              if (token.bgColor && ansiColorMap[token.bgColor]) {
+                el.style.backgroundColor = ansiColorMap[token.bgColor];
+              }
             }
             screen.appendChild(el);
             lineEndCol = Math.max(lineEndCol, token.col + token.width);
@@ -1324,6 +1367,30 @@
           draw(await call("MoveBottom"));
           return;
         }
+        if (ev.shiftKey && ev.key === "Home" && !ev.ctrlKey) {
+          ev.preventDefault();
+          if (!selectionAnchor) {
+            selectionAnchor = { row: state.cursor.row, col: state.cursor.col };
+          }
+          const next = await call("MoveHome");
+          if (next) {
+            selectionCursor = { row: next.cursor.row, col: next.cursor.col };
+            draw(next);
+          }
+          return;
+        }
+        if (ev.shiftKey && ev.key === "End" && !ev.ctrlKey) {
+          ev.preventDefault();
+          if (!selectionAnchor) {
+            selectionAnchor = { row: state.cursor.row, col: state.cursor.col };
+          }
+          const next = await call("MoveEnd");
+          if (next) {
+            selectionCursor = { row: next.cursor.row, col: next.cursor.col };
+            draw(next);
+          }
+          return;
+        }
         if (ev.key === "Home") {
           ev.preventDefault();
           clearSelection();
@@ -1473,12 +1540,28 @@
       });
       ansiApplyModeInputs.forEach((input) => input.addEventListener("change", applyActiveANSIColor));
 
+      function initTextStyleSelect() {
+        const el = document.getElementById("textStyleSelect");
+        if (!el) return;
+        el.addEventListener("change", async () => {
+          const sel = currentSelectionRect();
+          if (!sel) {
+            focusInputSink();
+            return;
+          }
+          const next = await call("SetRegionTextStyle", sel.startRow, sel.startCol, sel.endRow, sel.endCol, el.value);
+          if (next) draw(next);
+          focusInputSink();
+        });
+      }
+
       window.addEventListener("load", async () => {
         initANSIColorMenu();
         await applyActiveANSIColor();
         buildSpecialChars();
         initHanjaTool();
         initLineCharPicker();
+        initTextStyleSelect();
         await refresh();
         focusInputSink();
       });

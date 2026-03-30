@@ -72,4 +72,6 @@ export function SetRegionBGColor(arg1:number,arg2:number,arg3:number,arg4:number
 
 export function SetRegionColor(arg1:number,arg2:number,arg3:number,arg4:number,arg5:string):Promise<app.State>;
 
+export function SetRegionTextStyle(arg1:number,arg2:number,arg3:number,arg4:number,arg5:string):Promise<app.State>;
+
 export function Snapshot():Promise<app.State>;
