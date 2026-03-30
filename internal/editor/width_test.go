@@ -35,3 +35,17 @@ func TestMixedWidthFixtures(t *testing.T) {
 		}
 	}
 }
+
+func TestBoxDrawingAndBlocksAreDoubleCell(t *testing.T) {
+	eng := NewWidthEngine(true) // ambiguous treated wide globally
+
+	// Box Drawing (U+2500..U+257F)
+	if got := eng.StringWidth("┿╂"); got != 4 {
+		t.Fatalf("box drawing should be double-cell each, got width=%d", got)
+	}
+
+	// Block Elements (U+2580..U+259F)
+	if got := eng.StringWidth("█▀"); got != 4 {
+		t.Fatalf("block elements should be double-cell each, got width=%d", got)
+	}
+}

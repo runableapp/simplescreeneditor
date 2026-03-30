@@ -248,46 +248,30 @@ func (b *Buffer) SetCharAtWithColors(row, col int, text, color, bgColor string) 
 		return ErrOutOfBounds
 	}
 	segments := b.eng.Segment(text)
-	if len(segments) != 1 || segments[0].Width != 1 {
+	if len(segments) != 1 {
 		return ErrInvalidColumn
 	}
 	target := segments[0]
 	target.Color = color
 	target.BgColor = bgColor
+	if target.Width < 1 || col+target.Width > Columns {
+		return ErrOutOfBounds
+	}
 	currentWidth, err := b.lineWidth(row)
 	if err != nil {
 		return err
 	}
+	// Ensure the line has explicit single-width cells up to col so wide glyphs
+	// can be placed deterministically at the requested column.
 	if col > currentWidth {
 		space := b.eng.Segment(" ")[0]
+		space.Width = 1
 		for i := currentWidth; i < col; i++ {
 			b.lines[row] = append(b.lines[row], space)
 		}
-		b.lines[row] = append(b.lines[row], target)
-		return nil
 	}
-	if col == currentWidth {
-		b.lines[row] = append(b.lines[row], target)
-		return nil
-	}
-
-	boundaries, err := b.lineBoundaries(row)
-	if err != nil {
-		return err
-	}
-	idx, ok := boundaryIndex(boundaries, col)
-	if !ok {
-		return ErrInvalidColumn
-	}
-	if idx >= len(b.lines[row]) {
-		b.lines[row] = append(b.lines[row], target)
-		return nil
-	}
-	if b.lines[row][idx].Width != 1 {
-		return ErrInvalidColumn
-	}
-	b.lines[row][idx] = target
-	return nil
+	_, err = b.OverwriteAtWithColors(row, col, text, color, bgColor)
+	return err
 }
 
 // OverwriteAtWithColors writes exactly one grapheme at row/col without

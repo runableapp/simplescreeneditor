@@ -20,10 +20,7 @@ func NewWidthEngine(ambiguousAsWide bool) *WidthEngine {
 		ambiguousAsWide: ambiguousAsWide,
 		overrides: map[rune]int{
 			'·': 1, // Keep middle dot narrow for predictable Korean/English columns.
-			// Keep DOS-style line drawing symbols single-cell for editor tools.
-			'│': 1, '─': 1, '└': 1, '┘': 1, '┌': 1, '┐': 1, '├': 1, '┤': 1, '┬': 1, '┴': 1, '┼': 1,
-			'║': 1, '═': 1, '╚': 1, '╝': 1, '╔': 1, '╗': 1, '╠': 1, '╣': 1, '╦': 1, '╩': 1, '╬': 1,
-			'┃': 1, '━': 1, '┗': 1, '┛': 1, '┏': 1, '┓': 1, '┣': 1, '┫': 1, '┳': 1, '┻': 1, '╋': 1,
+			// Box drawing glyphs are treated as 2 columns (see GraphemeWidth range override).
 		},
 	}
 }
@@ -42,6 +39,12 @@ func (w *WidthEngine) GraphemeWidth(cluster string) int {
 
 	width := 0
 	for _, r := range cluster {
+		// Box-drawing and block-element glyphs are East Asian Ambiguous and often
+		// render double-width in CJK terminal fonts. Treat them as 2 columns.
+		if (r >= 0x2500 && r <= 0x257F) || (r >= 0x2580 && r <= 0x259F) {
+			width += 2
+			continue
+		}
 		if override, ok := w.overrides[r]; ok {
 			width += override
 			continue

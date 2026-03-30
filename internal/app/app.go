@@ -1038,8 +1038,15 @@ func oppositeBit(bit int) int {
 }
 
 func (a *EditorApp) drawLineStepLocked(styleName string, dr, dc int) {
+	// Box-drawing glyphs are treated as 2-column wide in the editor width engine,
+	// so horizontal drawing steps in 2-column increments to stay on grapheme boundaries.
+	colStep := dc
+	if dc != 0 {
+		colStep = dc * 2
+	}
+
 	nextRow := a.cursor.Row + dr
-	nextCol := a.cursor.Col + dc
+	nextCol := a.cursor.Col + colStep
 	if nextRow < 0 || nextRow >= editor.Rows || nextCol < 0 || nextCol >= editor.Columns {
 		return
 	}
@@ -1106,6 +1113,10 @@ func (a *EditorApp) lineMaskFromNeighbors(row, col int, style lineStyle) int {
 	for _, dir := range dirs {
 		nr := row + dir.dr
 		nc := col + dir.dc
+		// East/West neighbors are 2 columns away to match wide box-drawing glyphs.
+		if dir.bit == connEast || dir.bit == connWest {
+			nc = col + (dir.dc * 2)
+		}
 		if nr < 0 || nr >= editor.Rows || nc < 0 || nc >= editor.Columns {
 			continue
 		}
